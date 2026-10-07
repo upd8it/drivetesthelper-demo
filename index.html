@@ -349,7 +349,7 @@ const SCHOOLS=[
 {name:"Fahrschule Porta",district:"Trier-Mitte",since:"seit 1998",price:"9,99 €",lat:49.7580,lon:6.6420,about:"Innenstadt-Profis: Alleenring, Busspuren und enge Altstadtstraßen. Klassen B, BE und A."},
 {name:"Fahrschule Moselblick",district:"Trier-Nord",since:"seit 2009",price:"7,99 €",lat:49.7700,lon:6.6480,about:"Trier-Nord und Ehrang, Schwerpunkt Brücken und Bundesstraßen."},
 {name:"Fahrschule Südstadt",district:"Trier-Süd",since:"seit 2015",price:"6,99 €",lat:49.7480,lon:6.6400,about:"Kleine Fahrschule in Trier-Süd. Unterricht auch auf Englisch und Türkisch."},
-{name:"Fahrschule Saar-Mosel",district:"Konz",since:"seit 1987",price:"9,99 €",lat:49.7010,lon:6.5780,about:"Konz, Saarburg und Umgebung. Viele Kreisverkehre, Landstraße und Bundesstraßen."}
+{name:"Fahrschule Saar-Mosel",district:"Konz",since:"seit 1987",price:"9,99 €",sale:{pct:0.2,until:"31. Oktober"},lat:49.7010,lon:6.5780,about:"Konz, Saarburg und Umgebung. Viele Kreisverkehre, Landstraße und Bundesstraßen."}
 ];
 const SIMLOCS={trier:{label:"Trier",lat:49.7566,lon:6.6408}};
 function distKm(a,b){const dLat=(a.lat-b.lat)*111.2,dLon=(a.lon-b.lon)*111.2*Math.cos((a.lat+b.lat)/2*Math.PI/180);return Math.hypot(dLat,dLon)}
@@ -606,7 +606,7 @@ function avatar(n,sz){sz=sz||40;return `<span style="width:${sz}px;height:${sz}p
 function schoolRow(s,d){
   const n=vidsOf(s.name).length;
   return `<button class="city" data-a="school" data-s="${esc(s.name)}">${avatar(s.name)}<div><b>${esc(s.name)}</b><small class="num">${esc(s.district)} · ${n} ${n===1?"Video":"Videos"}${d!=null?" · "+km(d):""}</small></div>
-  <span class="end">${owns(s.name)?'<small style="color:var(--green);font-weight:600">gekauft</small>':`<b class="num" style="font-size:15px">${s.price}</b>`}</span></button>`;
+  <span class="end">${owns(s.name)?'<small style="color:var(--green);font-weight:600">gekauft</small>':`<b class="num" style="font-size:15px">${priceHTML(s)}</b>${s.sale?`<small class="tag new" style="display:inline-block;margin-top:3px">Aktion</small>`:""}`}</span></button>`;
 }
 
 /* ---------- customer screens ---------- */
@@ -619,7 +619,22 @@ function doRestore(){
 }
 /* Gutscheincodes: im echten Produkt Apple-Angebotscodes bzw. Google-Promo-Codes, eingelöst im Fenster des Stores.
    Demo-Codes zum Ausprobieren: */
-const CODES={"PORTA-TEST":"Fahrschule Porta","SUED-TEST":"Fahrschule Südstadt","MOSEL-TEST":"Fahrschule Moselblick","SAAR-TEST":"Fahrschule Saar-Mosel"};
+const eurFmt=n=>n.toFixed(2).replace(".",",")+" €";
+const priceNum=s=>parseFloat(String(s).replace(",","."));
+/* Rabattpreise liegen im Store immer auf ,99-Preisstufen */
+const discounted=(p,pct)=>Math.max(0.99,Math.round(p*(1-pct))-0.01);
+function effPrice(s){const p=priceNum(s.price);return s.sale?discounted(p,s.sale.pct):p}
+function priceHTML(s){return s.sale?`<s style="color:var(--muted);font-weight:400;font-size:12px">${s.price}</s> ${eurFmt(effPrice(s))}`:s.price}
+/* Gutscheincodes (im echten Produkt: Apple-Angebotscodes bzw. Google-Promo-Codes). Demo-Codes: */
+const CODES={
+  "PORTA-TEST":{school:"Fahrschule Porta",type:"free"},
+  "SUED-TEST":{school:"Fahrschule Südstadt",type:"free"},
+  "MOSEL-TEST":{school:"Fahrschule Moselblick",type:"free"},
+  "SAAR-TEST":{school:"Fahrschule Saar-Mosel",type:"free"},
+  "PORTA-20":{school:"Fahrschule Porta",type:"discount",pct:0.2},
+  "SUED-30":{school:"Fahrschule Südstadt",type:"discount",pct:0.3}
+};
+const isIOS=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const CODEK="drivetest-used-codes";
 function usedCodes(){try{return JSON.parse(kvGet(CODEK)||"[]")}catch(e){return []}}
 function openRedeem(msg){
@@ -635,14 +650,25 @@ function openRedeem(msg){
   const i=$("#code");i.focus();i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();redeemGo()}});
   renderNotes();
 }
+function openDiscountSheet(){
+  const s=schoolBy(S.school),old=priceNum(s.price),neu=discounted(old,S.disc.pct);
+  $("#sheet").innerHTML=`<div class="sheet" role="dialog" aria-label="Rabatt-Angebot"><span class="grab"></span>
+  <span class="lbl">Angebotscode von Apple · simuliert</span>
+  <div class="row" style="gap:12px">${avatar(s.name,48)}<div><b style="font-family:var(--display);font-size:19px">Videopaket ${esc(s.name)}</b><p class="sub">Code ${esc(S.disc.code)} · ${Math.round(S.disc.pct*100)} % Rabatt</p></div></div>
+  <dl class="kv"><dt>Preis</dt><dd class="num"><s style="color:var(--muted)">${s.price}</s> <b>${eurFmt(neu)}</b> inkl. MwSt.</dd><dt>Inhalt</dt><dd>${vidsOf(s.name).length} Videos, künftige inklusive</dd></dl>
+  <p class="hint">${isIOS()?"":"Hinweis: Rabatt-Codes gibt es nur im App Store. Bei Google Play laufen Rabatte als zeitlich begrenzte Aktion für alle (siehe Fahrschule Saar-Mosel). Im Prototyp funktioniert der Code hier trotzdem."}</p>
+  <button class="btn yellow" data-a="buydisc">Für ${eurFmt(neu)} kaufen</button><button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;
+}
 function redeemGo(){
   const i=$("#code"),err=$("#codeerr"),code=(i.value||"").trim().toUpperCase();
   const fail=m=>{err.hidden=false;err.textContent=m;i.focus()};
   if(!code)return fail("Bitte gib deinen Gutscheincode ein.");
-  const school=CODES[code];
-  if(!school)return fail("Dieser Code ist ungültig oder abgelaufen. Prüfe die Schreibweise.");
+  const c=CODES[code];
+  if(!c)return fail("Dieser Code ist ungültig oder abgelaufen. Prüfe die Schreibweise.");
+  const school=c.school;
   if(usedCodes().includes(code))return fail("Dieser Code wurde bereits eingelöst.");
   if(owns(school))return fail(`Du hast das Paket von ${school} bereits.`);
+  if(c.type==="discount"){S.school=school;S.disc={code,pct:c.pct};openDiscountSheet();return}
   const b=document.querySelector('[data-a="redeemgo"]');b.disabled=true;b.innerHTML='<span class="spin"></span> Wird geprüft';
   setTimeout(()=>{
     kvSet(CODEK,JSON.stringify([...usedCodes(),code]));
@@ -813,7 +839,7 @@ K.school=()=>{
       <li>${I.tick}<span>Voiceover als Text in 6 Sprachen</span></li>
       <li>${I.tick}<span>Einmalig bezahlen, kein Abo</span></li>
     </ul>
-    ${own?`<button class="btn" data-a="tab-lib">${I.tick.replace('var(--green)','currentColor')} Gekauft · Videos ansehen</button>`:`<button class="btn yellow" data-a="buy">Paket für ${s.price} kaufen</button><button class="linkbtn" data-a="redeem" style="align-self:center">Gutscheincode einlösen</button>`}</div>
+    ${own?`<button class="btn" data-a="tab-lib">${I.tick.replace('var(--green)','currentColor')} Gekauft · Videos ansehen</button>`:`${s.sale?`<p class="hint" style="text-align:center"><span class="tag new">Aktion −${Math.round(s.sale.pct*100)} %</span> bis ${esc(s.sale.until)}, statt ${s.price}</p>`:""}<button class="btn yellow" data-a="buy">Paket für ${eurFmt(effPrice(s))} kaufen</button><button class="linkbtn" data-a="redeem" style="align-self:center">Gutscheincode einlösen</button>`}</div>
   <span class="lbl">Hier sind die Stellen</span>${areaMap(vids,"Orte der Videos von "+s.name)}
   <span class="lbl num">${vids.length} ${vids.length===1?"Video":"Videos"}</span>
   <div class="list">${vids.map(v=>vrow(v,!unlocked(v))).join("")}</div></div>`;
@@ -909,7 +935,7 @@ NOTES.cities=["Stadtsuche","Ohne Standort sucht man eine Stadt und bekommt die F
 NOTES.school=["Fahrschule = Paket","Jede Fahrschule hat ihr eigenes Videopaket mit eigenem Preis. Das Profil ist gleichzeitig die Kaufseite. Wer kauft, bekommt alle Videos dieser Fahrschule und alle künftigen."];
 NOTES.welcomeBack=["Automatisch angemeldet","Nach der ersten Anmeldung bleibt der Nutzer auf dem Gerät angemeldet. Die App speichert dafür ein Sitzungs-Token im Schlüsselbund (iPhone) bzw. Keystore (Android) und erneuert es im Hintergrund. Beim nächsten Öffnen geht es ohne Login direkt zu den gekauften Paketen. Probiere „App schließen und neu öffnen“."];
 NOTES.splash=["App startet","Die App findet ein gespeichertes Sitzungs-Token, prüft es beim Server und lädt die gekauften Pakete. Der Nutzer muss nichts tun."];
-NOTES.redeem=["Gutscheincode","Eigene Codes, die Inhalte freischalten, erlauben Apple und Google nicht. Erlaubt sind die Codes der Stores: Apple-Angebotscodes und Google-Promo-Codes. Du erstellst sie in App Store Connect bzw. der Play Console, der Kunde löst sie im Fenster des Stores ein. RevenueCat meldet die Freischaltung wie einen Kauf. Demo-Codes zum Ausprobieren: <code>PORTA-TEST</code>, <code>SUED-TEST</code>, <code>MOSEL-TEST</code>, <code>SAAR-TEST</code>. Jeder Code geht nur einmal."];
+NOTES.redeem=["Gutschein- und Rabattcodes","Nur Store-eigene Codes, damit das Review sicher durchgeht. <b>Gratis:</b> Apple-Angebotscodes (kostenloses Angebot) und Google-Promo-Codes (bis 500 pro Quartal). <b>Rabatt:</b> nur bei Apple per Angebotscode (bezahltes Angebot), höchstens 10 aktive Angebote pro App. Bei Google gibt es keine Rabatt-Codes. Dort läuft ein Rabatt als zeitlich begrenzte Aktion für alle, wie hier bei Fahrschule Saar-Mosel. Demo-Codes: gratis <code>PORTA-TEST</code>, <code>SUED-TEST</code>, <code>MOSEL-TEST</code>, <code>SAAR-TEST</code>; Rabatt <code>PORTA-20</code>, <code>SUED-30</code>."];
 NOTES.account=["Konto-Seite","Pflicht für den App Store: Käufe wiederherstellen und Konto löschen müssen in der App erreichbar sein. „Käufe wiederherstellen“ fragt über RevenueCat bei Apple bzw. Google nach, welche Pakete auf dem Store-Konto gekauft wurden, und schaltet sie für das DriveTestHelper-Konto frei. Datenschutz, Nutzungsbedingungen und Impressum müssen ebenfalls erreichbar sein. Die eingestellte Sprache gilt für Voiceover und Text aller Videos und wird gespeichert, bei angemeldeten Nutzern später im Konto, damit sie auf jedem Handy gleich ist."];
 NOTES.delete=["Konto löschen","Apple verlangt, dass man das Konto direkt in der App löschen kann, nicht nur per E-Mail. Beim Löschen werden die Nutzerdaten im Backend entfernt. Bei „Mit Apple anmelden“ muss die App zusätzlich den Apple-Zugang über Apples Schnittstelle widerrufen. Die Käufe selbst bleiben beim Store und lassen sich mit einem neuen Konto wiederherstellen."];
 NOTES.login=["Anmeldung beim Auswählen eines Pakets","Erst wenn man ein Paket öffnet, kommt die Anmeldung, nur mit Apple oder Google. Das Konto verknüpft die Käufe, damit sie auf jedem Handy wiederhergestellt werden können (Supabase Auth oder Firebase Auth). Apple verlangt außerdem, dass man das Konto in der App löschen kann."];
@@ -954,6 +980,8 @@ document.addEventListener("click",e=>{
     case "login":openLoginSheet(b.dataset.p);break;
     case "redeem":openRedeem();break;
     case "redeemgo":redeemGo();break;
+    case "buydisc":{b.disabled=true;b.innerHTML='<span class="spin"></span> Wird bestätigt';const code=S.disc.code;setTimeout(()=>{kvSet(CODEK,JSON.stringify([...usedCodes(),code]));if(!owns(S.school))S.owned.push(S.school);addReceipt(S.school);save();
+      $("#sheet").innerHTML=`<div class="sheet" role="dialog" aria-label="Kauf abgeschlossen"><span class="grab"></span><div class="check">${I.bigtick}</div><h3 class="h" style="text-align:center">Paket freigeschaltet</h3><p class="sub" style="text-align:center">Gekauft mit Rabatt-Code ${esc(code)}. Alle ${vidsOf(S.school).length} Videos von ${esc(S.school)} sind jetzt in „Meine Videos“.</p><button class="btn" data-a="aftersale">Videos ansehen</button></div>`},900);break}
     case "tab-acc":stopPlayer();S.hist=[];S.screen="account";S.restore=null;render(true);break;
     case "restore":if(!S.user){S.pendingRestore=true;openGate("restore");break}doRestore();break;
     case "delacc":go("delete");break;
@@ -995,7 +1023,7 @@ function openSheet(){
   const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="buy";
   sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Kauf bestätigen"><span class="grab"></span>
   <div class="row" style="gap:12px">${LOGO.replace('width="40" height="40"','width="48" height="48"')}<div><b style="font-family:var(--display);font-size:19px">Videopaket ${esc(S.school)}</b><p class="sub">DriveTestHelper · In-App-Kauf · einmalig</p></div></div>
-  <dl class="kv"><dt>Preis</dt><dd class="num"><b>${schoolBy(S.school).price}</b> inkl. MwSt.</dd><dt>Inhalt</dt><dd>${vidsOf(S.school).length} Videos, künftige inklusive</dd><dt>Konto</dt><dd>${S.user?esc(S.user.name)+" ("+(S.user.via==="apple"?"Apple":"Google")+")":""}</dd></dl>
+  <dl class="kv"><dt>Preis</dt><dd class="num">${schoolBy(S.school).sale?`<s style="color:var(--muted)">${schoolBy(S.school).price}</s> `:""}<b>${eurFmt(effPrice(schoolBy(S.school)))}</b> inkl. MwSt.</dd><dt>Inhalt</dt><dd>${vidsOf(S.school).length} Videos, künftige inklusive</dd><dt>Konto</dt><dd>${S.user?esc(S.user.name)+" ("+(S.user.via==="apple"?"Apple":"Google")+")":""}</dd></dl>
   <p class="hint">Simulation: Hier öffnet sich in der echten App der Kaufdialog von App Store bzw. Google Play. Es wird nichts berechnet.</p>
   <button class="btn yellow" data-a="confirmbuy">Kauf bestätigen</button><button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;
   renderNotes();
