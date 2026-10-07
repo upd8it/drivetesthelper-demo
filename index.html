@@ -617,7 +617,49 @@ function doRestore(){
     S.restore=found.length?`${found.length===1?"1 Paket":found.length+" Pakete"} wiederhergestellt: ${found.map(n=>n.replace("Fahrschule ","")).join(", ")}`:"Keine weiteren Käufe gefunden. Alle Pakete sind bereits freigeschaltet.";
     if(S.screen==="account")render()},1200);
 }
+/* Gutscheincodes: im echten Produkt Apple-Angebotscodes bzw. Google-Promo-Codes, eingelöst im Fenster des Stores.
+   Demo-Codes zum Ausprobieren: */
+const CODES={"PORTA-TEST":"Fahrschule Porta","SUED-TEST":"Fahrschule Südstadt","MOSEL-TEST":"Fahrschule Moselblick","SAAR-TEST":"Fahrschule Saar-Mosel"};
+const CODEK="drivetest-used-codes";
+function usedCodes(){try{return JSON.parse(kvGet(CODEK)||"[]")}catch(e){return []}}
+function openRedeem(msg){
+  if(!S.user){S.pendingRedeem=true;openGate("redeem");return}
+  const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="redeem";
+  sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Gutscheincode einlösen"><span class="grab"></span>
+  <span class="lbl">Einlösefenster von ${S.user.via==="apple"?"Apple":"Google Play"} · simuliert</span>
+  <b style="font-family:var(--display);font-size:20px">Gutscheincode einlösen</b>
+  <div class="field"><label for="code">Code</label><input class="inp" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="z. B. PORTA-TEST" style="font-size:17px;letter-spacing:.06em;text-transform:uppercase"></div>
+  <p class="err" id="codeerr" ${msg?"":"hidden"}>${msg?esc(msg):""}</p>
+  <button class="btn" data-a="redeemgo">Einlösen</button>
+  <button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;
+  const i=$("#code");i.focus();i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();redeemGo()}});
+  renderNotes();
+}
+function redeemGo(){
+  const i=$("#code"),err=$("#codeerr"),code=(i.value||"").trim().toUpperCase();
+  const fail=m=>{err.hidden=false;err.textContent=m;i.focus()};
+  if(!code)return fail("Bitte gib deinen Gutscheincode ein.");
+  const school=CODES[code];
+  if(!school)return fail("Dieser Code ist ungültig oder abgelaufen. Prüfe die Schreibweise.");
+  if(usedCodes().includes(code))return fail("Dieser Code wurde bereits eingelöst.");
+  if(owns(school))return fail(`Du hast das Paket von ${school} bereits.`);
+  const b=document.querySelector('[data-a="redeemgo"]');b.disabled=true;b.innerHTML='<span class="spin"></span> Wird geprüft';
+  setTimeout(()=>{
+    kvSet(CODEK,JSON.stringify([...usedCodes(),code]));
+    S.owned.push(school);addReceipt(school);save();
+    $("#sheet").innerHTML=`<div class="sheet" role="dialog" aria-label="Gutschein eingelöst"><span class="grab"></span><div class="check">${I.bigtick}</div>
+    <h3 class="h" style="text-align:center">Gutschein eingelöst</h3><p class="sub" style="text-align:center">Das Paket von ${esc(school)} ist freigeschaltet: ${vidsOf(school).length} Videos.</p>
+    <button class="btn" data-a="aftersale">Videos ansehen</button></div>`;
+  },900);
+}
 function openGate(kind){
+  if(kind==="redeem"){const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="login";
+    sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Anmelden"><span class="grab"></span>
+    <div class="row" style="gap:12px">${LOGO.replace('width="40" height="40"','width="48" height="48"')}<div><span class="lbl">Anmelden, um fortzufahren</span><b style="font-family:var(--display);font-size:19px;display:block">Gutscheincode einlösen</b></div></div>
+    <p style="margin:0;font-size:14px">Melde dich an, damit das freigeschaltete Paket zu deinem Konto gehört und auf jedem Handy funktioniert.</p>
+    <button class="btn ghost" data-a="login" data-p="google" style="padding:13px">Mit Google anmelden</button>
+    <button class="btn" data-a="login" data-p="apple" style="background:var(--ink);color:var(--surface)">Mit Apple anmelden</button>
+    <button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;renderNotes();return}
   if(kind==="restore"){const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="login";
     sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Anmelden"><span class="grab"></span>
     <div class="row" style="gap:12px">${LOGO.replace('width="40" height="40"','width="48" height="48"')}<div><span class="lbl">Anmelden, um fortzufahren</span><b style="font-family:var(--display);font-size:19px;display:block">Käufe wiederherstellen</b></div></div>
@@ -659,6 +701,9 @@ K.account=()=>{
   <div class="card"><span class="lbl">Schon gekauft?</span>
     <p style="margin:0;font-size:14px">Neues Handy oder App neu installiert? Hol deine Pakete zurück.</p>
     <button class="btn ghost" data-a="restore">Käufe wiederherstellen</button>${restoreBox}</div>
+  <div class="card"><span class="lbl">Gutschein</span>
+    <p style="margin:0;font-size:14px">Du hast einen Gutscheincode, z. B. von deiner Fahrschule?</p>
+    <button class="btn ghost" data-a="redeem">Gutscheincode einlösen</button></div>
   ${langCard()}
   ${legal()}</div>`+tabs("acc");
   const mine=S.owned.map(schoolBy);
@@ -668,6 +713,9 @@ K.account=()=>{
     ${mine.length?mine.map(s=>`<div class="row">${avatar(s.name,32)}<b style="flex:1;font-size:15px">${esc(s.name)}</b><span class="tag free">gekauft</span></div>`).join(""):'<p class="sub">Noch keine Pakete gekauft.</p>'}
     <button class="btn ghost" data-a="restore" ${r==="busy"?"disabled":""}>Käufe wiederherstellen</button>
     <p class="hint">Hast du das Handy gewechselt oder die App neu installiert? Hier holst du deine Pakete von Apple bzw. Google zurück.</p>${restoreBox}</div>
+  <div class="card"><span class="lbl">Gutschein</span>
+    <p style="margin:0;font-size:14px">Du hast einen Gutscheincode, z. B. von deiner Fahrschule?</p>
+    <button class="btn ghost" data-a="redeem">Gutscheincode einlösen</button></div>
   ${langCard()}
   <div class="menu"><button data-a="logout">Abmelden</button><button data-a="delacc" class="red">Konto löschen</button></div>
   ${legal()}</div>`+tabs("acc");
@@ -765,7 +813,7 @@ K.school=()=>{
       <li>${I.tick}<span>Voiceover als Text in 6 Sprachen</span></li>
       <li>${I.tick}<span>Einmalig bezahlen, kein Abo</span></li>
     </ul>
-    ${own?`<button class="btn" data-a="tab-lib">${I.tick.replace('var(--green)','currentColor')} Gekauft · Videos ansehen</button>`:`<button class="btn yellow" data-a="buy">Paket für ${s.price} kaufen</button>`}</div>
+    ${own?`<button class="btn" data-a="tab-lib">${I.tick.replace('var(--green)','currentColor')} Gekauft · Videos ansehen</button>`:`<button class="btn yellow" data-a="buy">Paket für ${s.price} kaufen</button><button class="linkbtn" data-a="redeem" style="align-self:center">Gutscheincode einlösen</button>`}</div>
   <span class="lbl">Hier sind die Stellen</span>${areaMap(vids,"Orte der Videos von "+s.name)}
   <span class="lbl num">${vids.length} ${vids.length===1?"Video":"Videos"}</span>
   <div class="list">${vids.map(v=>vrow(v,!unlocked(v))).join("")}</div></div>`;
@@ -861,6 +909,7 @@ NOTES.cities=["Stadtsuche","Ohne Standort sucht man eine Stadt und bekommt die F
 NOTES.school=["Fahrschule = Paket","Jede Fahrschule hat ihr eigenes Videopaket mit eigenem Preis. Das Profil ist gleichzeitig die Kaufseite. Wer kauft, bekommt alle Videos dieser Fahrschule und alle künftigen."];
 NOTES.welcomeBack=["Automatisch angemeldet","Nach der ersten Anmeldung bleibt der Nutzer auf dem Gerät angemeldet. Die App speichert dafür ein Sitzungs-Token im Schlüsselbund (iPhone) bzw. Keystore (Android) und erneuert es im Hintergrund. Beim nächsten Öffnen geht es ohne Login direkt zu den gekauften Paketen. Probiere „App schließen und neu öffnen“."];
 NOTES.splash=["App startet","Die App findet ein gespeichertes Sitzungs-Token, prüft es beim Server und lädt die gekauften Pakete. Der Nutzer muss nichts tun."];
+NOTES.redeem=["Gutscheincode","Eigene Codes, die Inhalte freischalten, erlauben Apple und Google nicht. Erlaubt sind die Codes der Stores: Apple-Angebotscodes und Google-Promo-Codes. Du erstellst sie in App Store Connect bzw. der Play Console, der Kunde löst sie im Fenster des Stores ein. RevenueCat meldet die Freischaltung wie einen Kauf. Demo-Codes zum Ausprobieren: <code>PORTA-TEST</code>, <code>SUED-TEST</code>, <code>MOSEL-TEST</code>, <code>SAAR-TEST</code>. Jeder Code geht nur einmal."];
 NOTES.account=["Konto-Seite","Pflicht für den App Store: Käufe wiederherstellen und Konto löschen müssen in der App erreichbar sein. „Käufe wiederherstellen“ fragt über RevenueCat bei Apple bzw. Google nach, welche Pakete auf dem Store-Konto gekauft wurden, und schaltet sie für das DriveTestHelper-Konto frei. Datenschutz, Nutzungsbedingungen und Impressum müssen ebenfalls erreichbar sein. Die eingestellte Sprache gilt für Voiceover und Text aller Videos und wird gespeichert, bei angemeldeten Nutzern später im Konto, damit sie auf jedem Handy gleich ist."];
 NOTES.delete=["Konto löschen","Apple verlangt, dass man das Konto direkt in der App löschen kann, nicht nur per E-Mail. Beim Löschen werden die Nutzerdaten im Backend entfernt. Bei „Mit Apple anmelden“ muss die App zusätzlich den Apple-Zugang über Apples Schnittstelle widerrufen. Die Käufe selbst bleiben beim Store und lassen sich mit einem neuen Konto wiederherstellen."];
 NOTES.login=["Anmeldung beim Auswählen eines Pakets","Erst wenn man ein Paket öffnet, kommt die Anmeldung, nur mit Apple oder Google. Das Konto verknüpft die Käufe, damit sie auf jedem Handy wiederhergestellt werden können (Supabase Auth oder Firebase Auth). Apple verlangt außerdem, dass man das Konto in der App löschen kann."];
@@ -903,12 +952,14 @@ document.addEventListener("click",e=>{
     case "cities":go("cities");break;
     case "city":S.q=b.dataset.c;render();break;
     case "login":openLoginSheet(b.dataset.p);break;
+    case "redeem":openRedeem();break;
+    case "redeemgo":redeemGo();break;
     case "tab-acc":stopPlayer();S.hist=[];S.screen="account";S.restore=null;render(true);break;
     case "restore":if(!S.user){S.pendingRestore=true;openGate("restore");break}doRestore();break;
     case "delacc":go("delete");break;
     case "delconfirm":b.disabled=true;b.innerHTML='<span class="spin"></span> Konto wird gelöscht';setTimeout(()=>{stSet(null);kvSet(LANGK,null);S.lang="de";S.user=null;S.owned=[];S.hist=[];S.screen="welcome";S.toast="Dein Konto wurde gelöscht.";render(true)},900);break;
     case "logout":S.toast="Du bist abgemeldet.";S.user=null;stSet(JSON.stringify({user:null,purchases:S.owned,loc:S.loc==="granted"?"granted":null}));S.owned=[];S.hist=[];S.screen="welcome";render(true);break;
-    case "loginok":closeSheet();S.toast=null;S.user={name:"Lea",via:b.dataset.p};accountPurchases().forEach(n=>{if(!owns(n))S.owned.push(n)});save();if(S.pendingSchool){stopPlayer();S.school=S.pendingSchool;S.pendingSchool=null;S.hist.push(S.screen);S.screen="school"}render(true);if(S.pendingRestore){S.pendingRestore=false;doRestore()}break;
+    case "loginok":closeSheet();S.toast=null;S.user={name:"Lea",via:b.dataset.p};accountPurchases().forEach(n=>{if(!owns(n))S.owned.push(n)});save();if(S.pendingSchool){stopPlayer();S.school=S.pendingSchool;S.pendingSchool=null;S.hist.push(S.screen);S.screen="school"}render(true);if(S.pendingRestore){S.pendingRestore=false;doRestore()}if(S.pendingRedeem){S.pendingRedeem=false;openRedeem()}break;
     case "open":{const v=vById(b.dataset.id);if(!unlocked(v)){if(!S.user){S.pendingSchool=v.school;openGate();return}S.school=v.school;if(S.screen!=="school")go("school");return}S.vid=v.id;go("player");break}
     case "filter":S.filter=b.dataset.t;render();break;
     case "buy":openSheet();break;
@@ -959,7 +1010,7 @@ function confirmBuy(b){
 function closeSheet(){const sh=$("#sheet");sh.hidden=true;sh.innerHTML="";S.sheet=null;renderNotes()}
 
 $("#relaunch").addEventListener("click",()=>{stopPlayer();closeSheet();fresh();restore();if(S.user){S.screen="splash";render(true);setTimeout(()=>{if(S.screen==="splash"){S.screen="welcome";render(true)}},1200)}else render(true)});
-$("#reset").addEventListener("click",()=>{stopPlayer();stSet(null);kvSet(RCPT,null);kvSet(LANGK,null);VIDEOS.splice(0,VIDEOS.length-BASE_COUNT);closeSheet();fresh();render(true)});
+$("#reset").addEventListener("click",()=>{stopPlayer();stSet(null);kvSet(RCPT,null);kvSet(LANGK,null);kvSet(CODEK,null);VIDEOS.splice(0,VIDEOS.length-BASE_COUNT);closeSheet();fresh();render(true)});
 $("#logo").innerHTML=LOGO;
 render(true);
 })();
