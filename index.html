@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Klickbarer Prototyp der DriveTestHelper-App mit Beispieldaten.">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>DriveTestHelper Prototyp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#EEF1F2; --surface:#FFFFFF; --surface-2:#F5F7F8; --ink:#14181D; --muted:#5A6570; --line:#D6DCE0;
+  --blue:#0B5CAD; --blue-ink:#FFFFFF; --blue-soft:#E1ECF7; --yellow:#F5B800; --yellow-soft:#FFF3CC; --red:#C8102E; --green:#2E7D4F; --green-soft:#DDF0E4;
+  --frame:#15181C;
+  --map-land:#E6EAE4; --map-block:#D8DDD5; --map-road:#FFFFFF; --map-edge:#BFC7CE; --map-water:#B6D0E6; --map-green:#C9E0C1; --map-label:#56616B; --map-tram:#8A5A44;
+  --shadow:0 1px 2px rgba(20,24,29,.06),0 8px 24px rgba(20,24,29,.08);
+  --display:"Barlow Semi Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0E1215; --surface:#171C21; --surface-2:#1D2329; --ink:#E7ECEF; --muted:#98A4AE; --line:#2A3239;
+    --blue:#4A98E6; --blue-ink:#07121D; --blue-soft:#15293D; --yellow:#F5B800; --yellow-soft:#3A2F0A; --red:#F0566B; --green:#5CC08A; --green-soft:#14301F;
+    --frame:#000000;
+    --map-land:#1B2126; --map-block:#222930; --map-road:#3A434C; --map-edge:#2A3139; --map-water:#1D3A52; --map-green:#1E3325; --map-label:#9AA6B0; --map-tram:#C08A6E;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0E1215; --surface:#171C21; --surface-2:#1D2329; --ink:#E7ECEF; --muted:#98A4AE; --line:#2A3239;
+  --blue:#4A98E6; --blue-ink:#07121D; --blue-soft:#15293D; --yellow:#F5B800; --yellow-soft:#3A2F0A; --red:#F0566B; --green:#5CC08A; --green-soft:#14301F;
+  --frame:#000000;
+  --map-land:#1B2126; --map-block:#222930; --map-road:#3A434C; --map-edge:#2A3139; --map-water:#1D3A52; --map-green:#1E3325; --map-label:#9AA6B0; --map-tram:#C08A6E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.page{max-width:1240px;margin:0 auto;padding-inline:24px;padding-block:32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 410px minmax(0,1fr);gap:32px;align-items:start}
+.intro{display:flex;flex-direction:column;gap:18px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px)}
+.eyebrow{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.intro h1{font-family:var(--display);font-weight:700;font-size:44px;line-height:1;margin:0;display:flex;align-items:center;gap:12px;text-wrap:balance}
+.intro p{margin:0;color:var(--muted);max-width:40ch}
+.modes{display:flex;flex-direction:column;gap:8px}
+.mode{display:flex;gap:12px;align-items:center;text-align:left;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer}
+.mode b{display:block;font-family:var(--display);font-size:18px;font-weight:600}
+.mode span{font-size:13px;color:var(--muted)}
+.mode[aria-pressed="true"]{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}
+.mode .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);flex:none}
+.mode[aria-pressed="true"] .dot{border-color:var(--blue);background:radial-gradient(var(--blue) 45%,transparent 50%)}
+.linkbtn{background:none;border:0;padding:0;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:flex-start;font-size:14px}
+
+.stage{display:flex;justify-content:center}
+.phone{width:390px;max-width:100%;height:800px;border:10px solid var(--frame);border-radius:50px;background:var(--surface-2);position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 60px -20px rgba(10,14,18,.45)}
+.status{height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding-inline:28px;font-family:var(--display);font-weight:600;font-size:15px;background:var(--surface)}
+.status .isl{width:96px;height:28px;border-radius:20px;background:var(--frame)}
+.status .sys{display:flex;gap:5px;align-items:center}
+.status .sys i{display:block;width:4px;background:var(--ink);border-radius:1px}
+#app{flex:1;display:flex;flex-direction:column;min-height:0}
+.bar{flex:none;display:flex;align-items:center;gap:8px;padding:6px 12px 10px;background:var(--surface);border-bottom:1px solid var(--line);min-height:52px}
+.bar h2{margin:0;font-family:var(--display);font-weight:600;font-size:19px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back{width:36px;height:36px;border-radius:50%;border:0;background:var(--surface-2);display:grid;place-items:center;cursor:pointer;flex:none}
+.scr{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;gap:16px}
+.tabs{flex:none;display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--line);background:var(--surface);padding-bottom:14px}
+.tab{border:0;background:none;padding:10px 0 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:var(--muted);cursor:pointer}
+.tab[aria-current="page"]{color:var(--blue);font-weight:600}
+.tab svg{width:22px;height:22px}
+
+.h{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.08;margin:0;text-wrap:balance}
+.h3{font-family:var(--display);font-weight:600;font-size:18px;margin:0}
+.sub{color:var(--muted);margin:0;font-size:14px}
+.lbl{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.btn{border:0;border-radius:12px;padding:13px 16px;background:var(--blue);color:var(--blue-ink);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn.yellow{background:var(--yellow);color:#1B1600}
+.btn.danger{background:var(--red);color:#fff}
+.hint-side{margin:0;font-size:13px;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.toast{background:var(--green-soft);color:var(--green);font-weight:600;font-size:14px;border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center}
+.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.menu{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.menu button,.menu span{border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:12px 14px;font-size:14.5px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.menu > :last-child{border-bottom:0}
+.menu .red{color:var(--red);font-weight:600}
+.check-row{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check-row input{width:20px;height:20px;margin-top:1px;accent-color:var(--red);flex:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;white-space:nowrap;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--blue-soft);color:var(--blue)}
+.tag.new{background:var(--yellow-soft);color:var(--ink)}
+.tag.free{background:var(--green-soft);color:var(--green)}
+.num{font-variant-numeric:tabular-nums}
+
+.thumb{position:relative;border-radius:10px;overflow:hidden;background:#2a3036;aspect-ratio:16/9;max-width:100%}
+.thumb img,.thumb canvas,.thumb video{display:block;width:100%;height:100%;object-fit:cover}
+.thumb .dur{position:absolute;right:6px;bottom:6px;background:rgba(10,12,14,.78);color:#fff;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
+.thumb .play{position:absolute;inset:0;display:grid;place-items:center}
+.thumb .play span{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.thumb .lock{position:absolute;inset:0;background:rgba(14,18,21,.55);display:grid;place-items:center}
+
+.vrow{display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;cursor:pointer;text-align:left}
+.vrow .t{font-family:var(--display);font-weight:600;font-size:16px;line-height:1.15;margin:0 0 3px}
+.vrow .m{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 8px}
+.list{display:flex;flex-direction:column;gap:10px}
+
+.city{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:left;width:100%}
+.city b{font-family:var(--display);font-size:18px;font-weight:600;display:block}
+.city small{color:var(--muted);font-size:13px}
+.city .end{margin-left:auto;text-align:right;flex:none}
+.city[disabled]{cursor:default;opacity:.65}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:0 12px}
+.search input{border:0;background:none;padding:12px 0;flex:1;outline:none;min-width:0}
+
+.player{background:#000;margin:-16px -16px 0;position:relative}
+.player canvas,.player video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+.ctrl{display:flex;align-items:center;gap:10px;padding:8px 12px 10px;background:#0c0f12;color:#fff}
+.ctrl button{background:none;border:0;color:#fff;cursor:pointer;display:grid;place-items:center;width:30px;height:30px;flex:none}
+.ctrl input[type=range]{flex:1;accent-color:var(--yellow);min-width:0}
+.ctrl .num{font-size:12px;opacity:.85;flex:none}
+.vo-badge{position:absolute;left:10px;top:10px;background:rgba(10,12,14,.72);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;display:flex;align-items:center;gap:6px}
+.vo-badge i{display:block;width:3px;height:10px;background:var(--yellow);border-radius:2px;animation:wv .8s ease-in-out infinite}
+.vo-badge i:nth-child(2){animation-delay:.2s}.vo-badge i:nth-child(3){animation-delay:.4s}
+.paused .vo-badge i{animation-play-state:paused}
+@keyframes wv{50%{transform:scaleY(.35)}}
+
+.map{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line)}
+.m-land{fill:var(--map-land)}.m-block{fill:var(--map-block)}.m-green{fill:var(--map-green)}.m-water{fill:var(--map-water)}
+.m-road{stroke:var(--map-road);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.m-edge{stroke:var(--map-edge);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.m-lane{stroke:var(--map-edge);fill:none;stroke-dasharray:5 5}
+.m-tram{stroke:var(--map-tram);fill:none;stroke-dasharray:2 3;stroke-width:2}
+.m-route{stroke:var(--blue);fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.m-txt{fill:var(--map-label);font-family:var(--body);font-size:9.5px;font-weight:500}
+.m-txt.b{font-weight:700;fill:var(--ink)}
+.coords{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.coords a{color:var(--blue)}
+
+.seg{display:grid;grid-template-columns:42px 1fr;gap:8px;padding:8px 10px;border-radius:10px;cursor:pointer;border:0;background:none;text-align:left;width:100%}
+.seg .ts{font-size:12px;color:var(--muted);padding-top:2px}
+.seg.on{background:var(--yellow-soft)}
+.seg.on .ts{color:var(--ink);font-weight:600}
+[dir="rtl"] .seg{text-align:right}
+.selectwrap{display:flex;align-items:center;gap:8px}
+select,.inp,textarea{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+textarea{min-height:110px;resize:vertical;line-height:1.45}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.err{font-size:13px;color:var(--red);margin:0}
+.ok{font-size:13px;color:var(--green);margin:0;font-weight:600}
+
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.steps div{height:4px;border-radius:2px;background:var(--line)}
+.steps div.on{background:var(--blue)}
+.seg2{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg2 button{border:0;border-radius:9px;padding:9px 6px;background:none;cursor:pointer;font-weight:600;font-size:14px}
+.seg2 button[aria-pressed="true"]{background:var(--blue);color:var(--blue-ink)}
+.rec{display:flex;align-items:center;gap:12px}
+.recbtn{width:56px;height:56px;border-radius:50%;border:4px solid var(--line);background:var(--red);cursor:pointer;flex:none}
+.recbtn.on{border-color:var(--red);background:var(--surface);position:relative}
+.recbtn.on::after{content:"";position:absolute;inset:14px;background:var(--red);border-radius:3px}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:var(--surface)}
+.drop input{max-width:100%;font-size:13px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{font-family:var(--display);font-size:24px;display:block;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.incl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.incl li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.incl li svg{flex:none;margin-top:2px}
+
+#sheet{position:absolute;inset:0;background:rgba(8,10,12,.5);display:flex;align-items:flex-end;z-index:5}
+.sheet{background:var(--surface);width:100%;border-radius:22px 22px 0 0;padding:18px 18px 34px;display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+#sheet.center{align-items:center;justify-content:center}
+.alert{width:82%;background:var(--surface);border-radius:16px;overflow:hidden;text-align:center;animation:up .2s ease-out;display:flex;flex-direction:column}
+.alert-b{padding:18px 16px 14px;display:flex;flex-direction:column;gap:8px}
+.alert-b b{font-size:16px;line-height:1.3}
+.alert-b p{margin:0;font-size:13px;color:var(--muted)}
+.alert button{border:0;border-top:1px solid var(--line);background:none;padding:13px 8px;color:var(--blue);font-size:15px;cursor:pointer}
+.alert button:last-child{font-weight:600}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.check{width:64px;height:64px;border-radius:50%;background:var(--green);display:grid;place-items:center;align-self:center}
+
+.notes{display:flex;flex-direction:column;gap:18px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px)}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.note h3{margin:0;font-family:var(--display);font-weight:600;font-size:20px}
+.note p{margin:0;font-size:14px;color:var(--muted)}
+.note code{font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--ink)}
+.flow{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;font-size:14px}
+.flow li{display:flex;gap:10px;align-items:center;padding:5px 0;color:var(--muted)}
+.flow li.on{color:var(--ink);font-weight:600}
+.flow li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.flow li.on::before{background:var(--yellow);box-shadow:0 0 0 3px var(--yellow-soft)}
+.flow li.done::before{background:var(--blue)}
+
+@media (max-width:1080px){
+  .page{grid-template-columns:minmax(0,1fr) 410px}
+  .notes{grid-column:1 / -1;position:static;display:grid;grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  .page{grid-template-columns:minmax(0,1fr);padding-inline:16px;padding-block:20px 32px;gap:22px}
+  .intro,.notes{position:static}
+  .notes{display:flex}
+  .intro h1{font-size:36px}
+  .modes{flex-direction:row}
+  .mode{flex:1;padding:10px}
+  .mode span{display:none}
+}
+/* Auf dem Handy: App bildschirmfüllend zuerst, Erklärungen darunter */
+@media (max-width:520px){
+  .page{padding-inline:0;padding-block:0 32px;gap:24px}
+  .stage{order:-1}
+  .phone{width:100%;height:100dvh;border:0;border-radius:0;box-shadow:none}
+  .status{display:none}
+  .intro,.notes{padding-inline:16px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="intro">
+    <div class="eyebrow">Klickbarer Prototyp · Beispieldaten</div>
+    <h1><span id="logo"></span>DriveTestHelper</h1>
+    <p>Fahrschulen zeigen kurze Videos von schwierigen Stellen ihrer Stadt. Fahrschüler kaufen das Paket ihrer Fahrschule und sehen jede Stelle mit Karte und übersetztem Voiceover.</p>
+    <p class="hint-side">Der Fahrschul-Bereich wird später als eigene App umgesetzt.</p>
+    <div class="row" style="gap:18px;flex-wrap:wrap"><button class="linkbtn" id="relaunch">App schließen und neu öffnen</button><button class="linkbtn" id="reset">Demo zurücksetzen</button></div>
+  </header>
+
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="status"><span class="num">9:41</span><span class="isl"></span><span class="sys"><i style="height:5px"></i><i style="height:8px"></i><i style="height:11px"></i><i style="height:13px;opacity:.35"></i></span></div>
+      <div id="app"></div>
+      <div id="sheet" hidden></div>
+    </div>
+  </div>
+
+  <aside class="notes">
+    <div class="note" id="note"></div>
+    <div class="note">
+      <span class="lbl" id="flowlbl">Ablauf</span>
+      <ul class="flow" id="flow"></ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const km=d=>d.toFixed(1).replace(".",",")+" km";
+
+const LANGS=[["de","Deutsch","de-DE"],["en","English","en-GB"],["tr","Türkçe","tr-TR"],["ar","العربية","ar-SA"],["uk","Українська","uk-UA"],["pl","Polski","pl-PL"]];
+const CENTER={lat:49.7566,lon:6.6408};
+
+const VIDEOS=[
+{id:"v0",sample:true,title:"Rechts vor links in der Tempo-30-Zone",school:"Fahrschule Porta",district:"Trier-Süd",address:"Gilbertstraße, 54290 Trier",topic:"Vorfahrt",kind:"grid",dur:42,dist:0,lat:49.7470,lon:6.6440,voice:"Selbst eingesprochen",starts:[0,14,29],text:{
+de:["Wir fahren in eine Tempo-30-Zone. Hier gibt es meistens keine Vorfahrtsschilder.","Das heißt: An jeder Kreuzung gilt rechts vor links. Geschwindigkeit rechtzeitig reduzieren und nach rechts schauen.","Kommt von rechts ein Fahrzeug, lassen wir es zuerst fahren. Erst dann fahren wir weiter."],
+en:["We are entering a 30 km/h zone. There are usually no priority signs here.","That means: at every junction, traffic from the right has priority. Slow down in good time and look to the right.","If a vehicle comes from the right, we let it go first. Only then do we continue."],
+tr:["Saatte 30 km hız sınırı olan bir bölgeye giriyoruz. Burada genellikle geçiş üstünlüğü levhası yoktur.","Bu şu anlama gelir: Her kavşakta sağdan gelen önceliklidir. Hızınızı zamanında azaltın ve sağa bakın.","Sağdan bir araç gelirse önce onun geçmesine izin veririz. Ancak ondan sonra devam ederiz."],
+ar:["ندخل الآن منطقة سرعتها القصوى 30 كم/ساعة. غالبًا لا توجد هنا لافتات أولوية.","هذا يعني: في كل تقاطع تكون الأولوية للقادم من اليمين. خفّف السرعة في الوقت المناسب وانظر إلى اليمين.","إذا جاءت سيارة من اليمين، نتركها تمر أولًا، ثم نتابع السير."],
+uk:["Ми в'їжджаємо в зону з обмеженням швидкості 30 км/год. Тут зазвичай немає знаків пріоритету.","Це означає: на кожному перехресті діє правило «праворуч перед ліворуч». Вчасно знизьте швидкість і подивіться праворуч.","Якщо праворуч наближається автомобіль, ми пропускаємо його першим. Лише після цього їдемо далі."],
+pl:["Wjeżdżamy do strefy ograniczonej prędkości 30 km/h. Zazwyczaj nie ma tu znaków pierwszeństwa.","To oznacza: na każdym skrzyżowaniu obowiązuje zasada prawej ręki. Zwolnij odpowiednio wcześnie i spójrz w prawo.","Jeśli z prawej nadjeżdża pojazd, przepuszczamy go. Dopiero wtedy jedziemy dalej."]}},
+{id:"v1",title:"Busspur am Alleenring",school:"Fahrschule Porta",district:"Trier-Mitte",address:"Ostallee, 54290 Trier",topic:"Busspur",kind:"junction",map:{kind:"grid",labels:["Ostallee","Gartenfeldstr."],px:175,py:118},dur:56,dist:0,lat:49.7545,lon:6.6475,voice:"Selbst eingesprochen",starts:[0,18,38],text:{
+de:["Wir fahren auf dem Alleenring. Die rechte Spur ist hier eine Busspur.","Das Schild zeigt dir, wo die Busspur beginnt. Dort darfst du nicht fahren, auch nicht kurz zum Überholen.","Zum Rechtsabbiegen darfst du die Busspur nur dort überqueren, wo die Linie unterbrochen ist. Achte auf Busse von hinten."],
+en:["We are driving on the Alleenring. The right lane here is a bus lane.","The sign shows you where the bus lane begins. You must not drive in it, not even briefly to overtake.","To turn right, you may only cross the bus lane where the line is broken. Watch out for buses behind you."],
+tr:["Alleenring üzerinde ilerliyoruz. Buradaki sağ şerit otobüs şerididir.","Levha, otobüs şeridinin nerede başladığını gösterir. Bu şeritte kısa bir sollama için bile gidemezsiniz.","Sağa dönmek için otobüs şeridini yalnızca çizginin kesik olduğu yerde geçebilirsiniz. Arkadan gelen otobüslere dikkat edin."],
+ar:["نسير على طريق ألينرينغ الدائري. المسار الأيمن هنا مخصص للحافلات.","تبيّن لك اللافتة أين يبدأ مسار الحافلات. لا يجوز لك القيادة فيه، ولا حتى للتجاوز لفترة قصيرة.","للانعطاف يمينًا لا يجوز لك عبور مسار الحافلات إلا حيث يكون الخط متقطعًا. انتبه للحافلات القادمة من الخلف."],
+uk:["Ми їдемо по Аллеенрінгу. Права смуга тут — смуга для автобусів.","Знак показує, де починається автобусна смуга. Їздити нею не можна, навіть ненадовго для обгону.","Щоб повернути праворуч, перетинайте автобусну смугу лише там, де лінія переривчаста. Стежте за автобусами позаду."],
+pl:["Jedziemy po Alleenring. Prawy pas jest tutaj buspasem.","Znak pokazuje, gdzie zaczyna się buspas. Nie wolno nim jechać, nawet na chwilę w celu wyprzedzania.","Aby skręcić w prawo, możesz przeciąć buspas tylko tam, gdzie linia jest przerywana. Uważaj na autobusy z tyłu."]}},
+{id:"v2",title:"Auffahrt Konrad-Adenauer-Brücke: sicher einfädeln",school:"Fahrschule Moselblick",district:"Trier-Süd",address:"Auffahrt Konrad-Adenauer-Brücke, 54290 Trier",topic:"Einfädeln",kind:"bridge",dur:50,dist:0,lat:49.7445,lon:6.6260,voice:"KI-Stimme (Anna)",starts:[0,16,33],text:{
+de:["Wir fahren auf die Konrad-Adenauer-Brücke auf. Der Beschleunigungsstreifen ist hier kurz.","Früh beschleunigen, Spiegel und Schulterblick nach links. Suche dir eine Lücke im fließenden Verkehr.","Blinker setzen und zügig einfädeln. Nicht am Ende des Streifens stehen bleiben."],
+en:["We are driving onto the Konrad-Adenauer-Brücke. The acceleration lane is short here.","Accelerate early, check the mirror and look over your left shoulder. Find a gap in the flowing traffic.","Indicate and merge smoothly. Do not stop at the end of the lane."],
+tr:["Konrad-Adenauer-Brücke'ye çıkıyoruz. Buradaki hızlanma şeridi kısadır.","Erken hızlanın, aynaya bakın ve sol omzunuzun üzerinden kontrol edin. Akan trafikte bir boşluk arayın.","Sinyal verin ve akıcı bir şekilde şeride geçin. Şeridin sonunda durmayın."],
+ar:["نصعد الآن إلى جسر كونراد أديناور. مسار التسارع هنا قصير.","تسارع مبكرًا، وانظر في المرآة ثم التفت فوق كتفك الأيسر. ابحث عن فجوة في حركة السير.","شغّل الإشارة واندمج بسلاسة. لا تتوقف في نهاية المسار."],
+uk:["Ми заїжджаємо на міст Конрада Аденауера. Смуга розгону тут коротка.","Розганяйтеся заздалегідь, перевірте дзеркало і подивіться через ліве плече. Знайдіть проміжок у потоці.","Увімкніть покажчик повороту й плавно перестройтеся. Не зупиняйтеся в кінці смуги."],
+pl:["Wjeżdżamy na most Konrada Adenauera. Pas rozbiegowy jest tutaj krótki.","Przyspiesz wcześnie, sprawdź lusterko i spójrz przez lewe ramię. Znajdź lukę w ruchu.","Włącz kierunkowskaz i płynnie włącz się do ruchu. Nie zatrzymuj się na końcu pasa."]}},
+{id:"v3",title:"Mehrspurige Kreuzung Kaiserstraße",school:"Fahrschule Südstadt",district:"Trier-Mitte",address:"Kaiserstraße / Südallee, 54290 Trier",topic:"Mehrspurig",kind:"junction",dur:54,dist:0,lat:49.7520,lon:6.6360,voice:"Selbst eingesprochen",starts:[0,18,36],text:{
+de:["Hier kreuzt die Kaiserstraße die Südallee. Die Kreuzung hat mehrere Fahrstreifen pro Richtung.","Ordne dich früh ein. Die Pfeile auf der Fahrbahn zeigen dir, welcher Streifen wohin führt.","Beim Abbiegen in deinem Fahrstreifen bleiben und auf Radfahrende rechts neben dir achten."],
+en:["Here Kaiserstraße crosses Südallee. The junction has several lanes in each direction.","Get into lane early. The arrows on the road show you where each lane leads.","Stay in your lane while turning and watch out for cyclists on your right."],
+tr:["Burada Kaiserstraße, Südallee ile kesişir. Kavşakta her yön için birden fazla şerit vardır.","Erkenden doğru şeride geçin. Yoldaki oklar hangi şeridin nereye gittiğini gösterir.","Dönüş sırasında kendi şeridinizde kalın ve sağınızdaki bisikletlilere dikkat edin."],
+ar:["هنا يتقاطع شارع كايزرشتراسه مع شارع زود آليه. للتقاطع عدة مسارات في كل اتجاه.","اختر مسارك مبكرًا. الأسهم على الطريق تبيّن لك إلى أين يؤدي كل مسار.","ابقَ في مسارك أثناء الانعطاف وانتبه لراكبي الدراجات على يمينك."],
+uk:["Тут Кайзерштрасе перетинається із Зюдаллее. Перехрестя має кілька смуг у кожному напрямку.","Займіть потрібну смугу заздалегідь. Стрілки на дорозі показують, куди веде кожна смуга.","Під час повороту залишайтеся у своїй смузі та стежте за велосипедистами праворуч від вас."],
+pl:["Tutaj Kaiserstraße krzyżuje się z Südallee. Skrzyżowanie ma kilka pasów w każdym kierunku.","Zajmij odpowiedni pas wcześnie. Strzałki na jezdni pokazują, dokąd prowadzi każdy pas.","Podczas skrętu trzymaj się swojego pasa i uważaj na rowerzystów po prawej stronie."]}},
+{id:"v4",title:"Kreisverkehr in Konz",school:"Fahrschule Saar-Mosel",district:"Konz",address:"Kreisverkehr Konz-Mitte, 54329 Konz",topic:"Kreisverkehr",kind:"roundabout",dur:46,dist:0,lat:49.7000,lon:6.5800,voice:"KI-Stimme (Jonas)",starts:[0,15,31],text:{
+de:["Vor dem Kreisverkehr Geschwindigkeit verringern. Wer schon im Kreis fährt, hat Vorfahrt.","Beim Einfahren nicht blinken. Wir fahren zügig ein, sobald eine ausreichende Lücke da ist.","Vor der gewünschten Ausfahrt rechts blinken und auf Fußgänger am Überweg achten."],
+en:["Reduce your speed before the roundabout. Vehicles already in the roundabout have priority.","Do not indicate when entering. We enter smoothly as soon as there is a big enough gap.","Indicate right before your exit and watch for pedestrians at the crossing."],
+tr:["Döner kavşaktan önce hızınızı azaltın. Kavşağın içindeki araçların geçiş önceliği vardır.","Kavşağa girerken sinyal vermeyin. Yeterli bir boşluk olduğunda akıcı şekilde gireriz.","Çıkmak istediğiniz yerden önce sağa sinyal verin ve yaya geçidindeki yayalara dikkat edin."],
+ar:["خفّف السرعة قبل الدوّار. الأولوية للمركبات الموجودة داخل الدوّار.","لا تشغّل الإشارة عند الدخول. ندخل بسلاسة عندما تتوفر فجوة كافية.","قبل المخرج الذي تريده شغّل الإشارة إلى اليمين وانتبه للمشاة عند المعبر."],
+uk:["Перед кільцем знизьте швидкість. Перевагу мають ті, хто вже рухається по колу.","Під час в'їзду покажчик повороту не вмикаємо. Плавно в'їжджаємо, щойно з'явиться достатній проміжок.","Перед потрібним виїздом увімкніть правий покажчик і зверніть увагу на пішоходів на переході."],
+pl:["Przed rondem zmniejsz prędkość. Pierwszeństwo mają pojazdy, które już są na rondzie.","Przy wjeździe nie włączamy kierunkowskazu. Wjeżdżamy płynnie, gdy tylko pojawi się wystarczająca luka.","Przed wybranym zjazdem włącz prawy kierunkowskaz i uważaj na pieszych na przejściu."]}},
+{id:"v5",title:"Rechts abbiegen über den Radweg",school:"Fahrschule Moselblick",district:"Trier-Nord",address:"Paulinstraße, 54292 Trier",topic:"Abbiegen",kind:"junction",map:{kind:"grid",labels:["Paulinstr.","Nordallee"],water:true,px:175,py:118},dur:38,dist:0,lat:49.7640,lon:6.6500,voice:"KI-Stimme (Anna)",starts:[0,18],text:{
+de:["Wir biegen rechts ab. Rechts neben uns verläuft ein Radweg.","Vor dem Abbiegen Schulterblick nach rechts. Radfahrende, die geradeaus fahren, haben Vorrang."],
+en:["We are turning right. There is a cycle lane to our right.","Before turning, look over your right shoulder. Cyclists going straight ahead have priority."],
+tr:["Sağa dönüyoruz. Sağımızda bir bisiklet yolu var.","Dönmeden önce sağ omzunuzun üzerinden bakın. Düz giden bisikletlilerin önceliği vardır."],
+ar:["ننعطف يمينًا. على يميننا مسار للدراجات.","قبل الانعطاف انظر فوق كتفك الأيمن. لراكبي الدراجات الذين يسيرون مستقيمًا الأولوية."],
+uk:["Ми повертаємо праворуч. Праворуч від нас проходить велосипедна доріжка.","Перед поворотом подивіться через праве плече. Велосипедисти, які їдуть прямо, мають перевагу."],
+pl:["Skręcamy w prawo. Po prawej stronie biegnie droga rowerowa.","Przed skrętem spójrz przez prawe ramię. Rowerzyści jadący prosto mają pierwszeństwo."]}},
+{id:"v6",title:"Rückwärts einparken in der Saarstraße",school:"Fahrschule Südstadt",district:"Trier-Süd",address:"Saarstraße, 54290 Trier",topic:"Einparken",kind:"grid",map:{kind:"grid",labels:["Saarstr.","Matthiasstr."],px:120,py:118},dur:44,dist:0,lat:49.7470,lon:6.6380,voice:"Selbst eingesprochen",starts:[0,22],text:{
+de:["Wir parken rückwärts in eine Parklücke in der Saarstraße ein. Hier ist viel Verkehr, also früh blinken.","Langsam zurücksetzen, rundum schauen und auf Radfahrende und Fußgänger achten."],
+en:["We are reversing into a parking space on Saarstraße. There is a lot of traffic here, so indicate early.","Reverse slowly, look all around and watch out for cyclists and pedestrians."],
+tr:["Saarstraße'de bir park yerine geri geri park ediyoruz. Burada trafik yoğun, bu yüzden erkenden sinyal verin.","Yavaşça geri gidin, her yöne bakın ve bisikletlilere ve yayalara dikkat edin."],
+ar:["نركن السيارة إلى الخلف في موقف في شارع زارشتراسه. حركة السير هنا كثيفة، لذا شغّل الإشارة مبكرًا.","ارجع ببطء، وانظر في كل الاتجاهات، وانتبه لراكبي الدراجات والمشاة."],
+uk:["Ми паркуємося заднім ходом на місце на Заарштрасе. Тут інтенсивний рух, тому вмикайте покажчик заздалегідь.","Повільно здавайте назад, дивіться навколо та стежте за велосипедистами й пішоходами."],
+pl:["Parkujemy tyłem na miejscu przy Saarstraße. Ruch jest tu duży, więc włącz kierunkowskaz wcześnie.","Cofaj powoli, rozglądaj się dookoła i uważaj na rowerzystów i pieszych."]}},
+{id:"v7",title:"Links abbiegen bei Gegenverkehr",school:"Fahrschule Saar-Mosel",district:"Konz",address:"Wiltinger Straße, 54329 Konz",topic:"Abbiegen",kind:"junction",map:{kind:"grid",labels:["Wiltinger Str.","Brückenstr."],px:175,py:118},dur:40,dist:0,lat:49.6960,lon:6.5720,voice:"KI-Stimme (Jonas)",starts:[0,19],text:{
+de:["Wir biegen links ab und haben Gegenverkehr. Weit in die Kreuzung einfahren und dort warten.","Gegenverkehr hat Vorrang. Erst abbiegen, wenn die Lücke sicher groß genug ist, und auf Fußgänger achten."],
+en:["We are turning left with oncoming traffic. Drive well into the junction and wait there.","Oncoming traffic has priority. Only turn when the gap is clearly big enough, and watch out for pedestrians."],
+tr:["Karşıdan gelen trafik varken sola dönüyoruz. Kavşağın içine iyice girin ve orada bekleyin.","Karşıdan gelen trafiğin önceliği vardır. Ancak boşluk yeterince büyükse dönün ve yayalara dikkat edin."],
+ar:["ننعطف يسارًا مع وجود حركة سير مقابلة. تقدّم داخل التقاطع وانتظر هناك.","الأولوية لحركة السير المقابلة. لا تنعطف إلا عندما تكون الفجوة كبيرة بما يكفي، وانتبه للمشاة."],
+uk:["Ми повертаємо ліворуч, а назустріч рухаються автомобілі. Заїжджайте далеко на перехрестя й чекайте там.","Зустрічний транспорт має перевагу. Повертайте лише тоді, коли проміжок достатньо великий, і стежте за пішоходами."],
+pl:["Skręcamy w lewo, a z naprzeciwka jadą pojazdy. Wjedź daleko w skrzyżowanie i tam zaczekaj.","Pojazdy z naprzeciwka mają pierwszeństwo. Skręcaj dopiero, gdy luka jest wystarczająco duża, i uważaj na pieszych."]}}
+];
+const BASE_COUNT=VIDEOS.length;
+
+const CITIES=[
+{name:"Trier",lat:49.7566,lon:6.6408},
+{name:"Konz",lat:49.7000,lon:6.5780},
+{name:"Schweich",lat:49.8220,lon:6.7520},
+{name:"Saarburg",lat:49.6080,lon:6.5500},
+{name:"Bitburg",lat:49.9740,lon:6.5250},
+{name:"Wittlich",lat:49.9850,lon:6.8930},
+{name:"Köln",lat:50.9413,lon:6.9583}
+];
+const SCHOOLS=[
+{name:"Fahrschule Porta",district:"Trier-Mitte",since:"seit 1998",price:"9,99 €",lat:49.7580,lon:6.6420,about:"Innenstadt-Profis: Alleenring, Busspuren und enge Altstadtstraßen. Klassen B, BE und A."},
+{name:"Fahrschule Moselblick",district:"Trier-Nord",since:"seit 2009",price:"7,99 €",lat:49.7700,lon:6.6480,about:"Trier-Nord und Ehrang, Schwerpunkt Brücken und Bundesstraßen."},
+{name:"Fahrschule Südstadt",district:"Trier-Süd",since:"seit 2015",price:"6,99 €",lat:49.7480,lon:6.6400,about:"Kleine Fahrschule in Trier-Süd. Unterricht auch auf Englisch und Türkisch."},
+{name:"Fahrschule Saar-Mosel",district:"Konz",since:"seit 1987",price:"9,99 €",lat:49.7010,lon:6.5780,about:"Konz, Saarburg und Umgebung. Viele Kreisverkehre, Landstraße und Bundesstraßen."}
+];
+const SIMLOCS={trier:{label:"Trier",lat:49.7566,lon:6.6408}};
+function distKm(a,b){const dLat=(a.lat-b.lat)*111.2,dLon=(a.lon-b.lon)*111.2*Math.cos((a.lat+b.lat)/2*Math.PI/180);return Math.hypot(dLat,dLon)}
+VIDEOS.forEach(v=>v.dist=+distKm(v,CENTER).toFixed(1));
+const TOPICS=["Vorfahrt","Abbiegen","Busspur","Straßenbahn","Einfädeln","Mehrspurig","Kreisverkehr","Einparken","Sonstiges"];
+
+/* ---------- state ---------- */
+let S;
+function fresh(){
+  S={mode:"kunde",screen:"welcome",hist:[],user:null,owned:[],lang:"de",sound:true,vid:null,filter:"Alle",sort:"new",q:"",
+     loc:null,simLoc:"trier",notify:false,school:null,sheet:null,
+     };
+}
+/* Konto + Käufe bleiben auf dem Gerät gespeichert (im echten Produkt: Sitzungs-Token im Schlüsselbund/Keystore) */
+const STORE="drivetest-session", RCPT="drivetest-store-receipts", LANGK="drivetest-lang", MEMS={};
+function kvGet(k){try{const v=localStorage.getItem(k);if(v!=null)return v}catch(e){}return k in MEMS?MEMS[k]:null}
+function kvSet(k,v){MEMS[k]=v;try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+function stGet(){return kvGet(STORE)}
+function stSet(v){kvSet(STORE,v)}
+/* Käufe, die Apple bzw. Google auf dem Store-Konto des Geräts speichert (unabhängig vom DriveTestHelper-Konto) */
+function receipts(){try{return JSON.parse(kvGet(RCPT)||"[]").filter(n=>SCHOOLS.some(s=>s.name===n))}catch(e){return []}}
+function addReceipt(n){const r=receipts();if(!r.includes(n)){r.push(n);kvSet(RCPT,JSON.stringify(r))}}
+function save(){stSet(JSON.stringify({user:S.user,purchases:S.owned,loc:S.loc==="granted"?"granted":null}))}
+function accountPurchases(){try{const d=JSON.parse(stGet()||"null");return ((d&&d.purchases)||[]).filter(n=>SCHOOLS.some(s=>s.name===n))}catch(e){return []}}
+function restore(){try{const lk=kvGet(LANGK);if(lk&&LANGS.some(l=>l[0]===lk))S.lang=lk}catch(e){}try{const d=JSON.parse(stGet()||"null");if(d&&d.loc)S.loc="granted";if(d&&d.user){S.user=d.user;S.owned=accountPurchases()}}catch(e){}}
+fresh();restore();
+
+/* ---------- icons ---------- */
+const I={
+back:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+play:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+pause:'<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>',
+volOn:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>',
+volOff:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+lock:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="rgba(255,255,255,.15)"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>',
+pin:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.4 7-12a7 7 0 00-14 0c0 5.6 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+loc:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>',
+tick:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+bigtick:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="4"/><path d="M4 20.5c1.5-4 4.5-5.5 8-5.5s6.5 1.5 8 5.5"/></svg>',
+home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 11l8-6.5 8 6.5V20h-5.5v-5h-5v5H4z"/></svg>',
+lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg>',
+upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 17v3h16v-3"/></svg>',
+chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+speak:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 010 7"/></svg>'
+};
+const LOGO='<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="var(--blue)"/><path d="M14 34 L18.5 8 H21.5 L26 34Z" fill="#fff"/><path d="M20 12v3M20 19v4M20 27v5" stroke="var(--blue)" stroke-width="1.6"/><circle cx="31" cy="9" r="4" fill="var(--yellow)"/></svg>';
+
+function sign(topic,size){
+  size=size||26;
+  const w=size,h=size;
+  switch(topic){
+    case "Vorfahrt": return `<svg width="${w}" height="${h}" viewBox="0 0 40 38" aria-hidden="true"><path d="M20 3L37 34H3Z" fill="#fff" stroke="#C8102E" stroke-width="4" stroke-linejoin="round"/><path d="M15 17l10 10M25 17L15 27" stroke="#111" stroke-width="3" stroke-linecap="round"/></svg>`;
+    case "Straßenbahn": return `<svg width="${w}" height="${h}" viewBox="0 0 40 38" aria-hidden="true"><path d="M20 3L37 34H3Z" fill="#fff" stroke="#C8102E" stroke-width="4" stroke-linejoin="round"/><rect x="14" y="16" width="12" height="10" rx="2" fill="#111"/><rect x="16" y="18" width="8" height="3" fill="#fff"/><path d="M20 16v-3M17 13h6" stroke="#111" stroke-width="1.5"/></svg>`;
+    case "Kreisverkehr": return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#0B5CAD"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M12 15a9 9 0 0 1 11-5"/><path d="M29 17a9 9 0 0 1-4 11"/><path d="M19 29a9 9 0 0 1-8-7"/></g><g fill="#fff"><path d="M22 6.5l4 3.5-5 2z"/><path d="M28.5 29l-5 .5 2.2-4.8z"/><path d="M8 20l2.8 4.2 1.5-5z"/></g></svg>`;
+    case "Einfädeln": return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="5" fill="#0B5CAD"/><path d="M24 34V6M14 34c0-9 10-11 10-18" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>`;
+    case "Mehrspurig": return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="5" fill="#0B5CAD"/><g stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M11 32V12M7 16l4-4 4 4"/><path d="M20 32V12M16 16l4-4 4 4"/><path d="M29 32V20q0-6-5-8M24 8l0 4 4 1"/></g></svg>`;
+    case "Busspur": return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="5" fill="#0B5CAD"/><text x="20" y="25" text-anchor="middle" font-family="Arial" font-weight="700" font-size="13" fill="#fff">BUS</text></svg>`;
+    case "Abbiegen": return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="5" fill="#0B5CAD"/><path d="M15 33V20q0-6 6-6h7M24 9l5 5-5 5" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    case "Einparken": return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="5" fill="#0B5CAD"/><text x="20" y="30" text-anchor="middle" font-family="Arial" font-weight="700" font-size="26" fill="#fff">P</text></svg>`;
+    default: return `<svg width="${w}" height="${h}" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="5" fill="#0B5CAD"/><text x="20" y="30" text-anchor="middle" font-family="Georgia" font-style="italic" font-weight="700" font-size="24" fill="#fff">i</text></svg>`;
+  }
+}
+
+/* ---------- driving scene (stand-in for real video) ---------- */
+const PAL={grid:["#9EC3DE","#DCE7EE","#7F8C84"],square:["#A9C4D8","#E3E8EC","#8A8F92"],bridge:["#8FB9DA","#D6E5EF","#5F8DB3"],junction:["#B6CCDB","#E6ECEF","#868E91"],roundabout:["#9CC6DE","#DDEBE5","#7F9A6E"]};
+function drawScene(ctx,w,h,t,kind){
+  const pal=PAL[kind]||PAL.grid, hz=h*.42, vx=w/2, K=w*.55;
+  let g=ctx.createLinearGradient(0,0,0,hz);g.addColorStop(0,pal[0]);g.addColorStop(1,pal[1]);
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,hz);
+  // skyline
+  ctx.fillStyle=kind==="bridge"?"rgba(70,90,110,.45)":"rgba(80,92,104,.5)";
+  for(let i=0;i<22;i++){const bx=(i*57.3)%w, bw=18+(i*13)%26, bh=(kind==="roundabout"?6:12)+(i*29)%(h*.12);ctx.fillRect(bx,hz-bh,bw,bh)}
+  if(kind==="square"){ctx.fillStyle="rgba(60,66,74,.7)";ctx.fillRect(vx+w*.18,hz-h*.2,6,h*.2);ctx.beginPath();ctx.moveTo(vx+w*.18-8,hz-h*.2);ctx.lineTo(vx+w*.18+3,hz-h*.27);ctx.lineTo(vx+w*.18+14,hz-h*.2);ctx.fill()}
+  ctx.fillStyle=pal[2];ctx.fillRect(0,hz,w,h-hz);
+  const sp=6, off=(t*sp)%4;
+  const P=(x,d)=>{const s=1/(1+d*.35);return [vx+x*K*s, hz+(h-hz)*s]};
+  const quad=(x0,x1,d0,d1,col)=>{const a=P(x0,d0),b=P(x1,d0),c=P(x1,d1),e=P(x0,d1);ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.lineTo(e[0],e[1]);ctx.fill()};
+  const roadW=kind==="junction"?1.5:1.05;
+  if(kind==="bridge"){quad(-3,3,0,80,"#5F8DB3")}
+  quad(-roadW,roadW,-.3,80,"#4A4F55");
+  // edge lines
+  quad(-roadW,-roadW+.035,-.3,80,"#E9ECEE");quad(roadW-.035,roadW,-.3,80,"#E9ECEE");
+  if(kind==="square"){ // tram tracks
+    [-.62,-.42].forEach(x=>quad(x,x+.02,-.3,80,"#9EA3A8"));
+  }
+  const lanes=kind==="junction"?[-.5,0,.5]:[0];
+  for(let i=0;i<22;i++){const d=i*4-off;if(d<-1)continue;lanes.forEach(x=>quad(x-.018,x+.018,d,d+1.7,"#F1F2F2"))}
+  if(kind==="junction"){ // arrows
+    for(let i=0;i<4;i++){const d=i*16-(t*sp)%16+6;if(d<0)continue;[-.25,.25].forEach(x=>{quad(x-.03,x+.03,d,d+1.2,"#F1F2F2");const a=P(x-.1,d+1.2),b=P(x+.1,d+1.2),c=P(x,d+1.9);ctx.fillStyle="#F1F2F2";ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.fill()})}
+  }
+  // side objects, far to near
+  const period=kind==="grid"?5:6;
+  const objs=[];for(let i=18;i>=0;i--){const d=i*period-(t*sp)%period;if(d>-.4)objs.push(d)}
+  objs.forEach(d=>{
+    const s=1/(1+d*.35);
+    [-1,1].forEach(side=>{
+      if(kind==="grid"){const x0=side*(roadW+.45),x1=side*(roadW+1.6);const a=P(x0,d),b=P(x1,d);const hh=1.1*K*s;ctx.fillStyle=side<0?"#B9A58F":"#A7B3B9";ctx.fillRect(Math.min(a[0],b[0]),a[1]-hh,Math.abs(b[0]-a[0]),hh);ctx.fillStyle="rgba(40,50,60,.35)";ctx.fillRect(Math.min(a[0],b[0])+Math.abs(b[0]-a[0])*.2,a[1]-hh*.75,Math.abs(b[0]-a[0])*.18,hh*.25)}
+      else if(kind==="bridge"){const a=P(side*(roadW+.1),d);const hh=.35*K*s;ctx.fillStyle="#D5DADF";ctx.fillRect(a[0]-1.5*s,a[1]-hh,3*s+1,hh)}
+      else{const a=P(side*(roadW+.35),d);const hh=.5*K*s;ctx.fillStyle="#2F3439";ctx.fillRect(a[0]-1.2*s-.5,a[1]-hh,2.4*s+1,hh);if(kind==="square"&&side<0){ctx.strokeStyle="rgba(40,40,40,.5)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a[0],a[1]-hh);ctx.lineTo(P(.2,d)[0],a[1]-hh);ctx.stroke()}}
+    });
+  });
+  if(kind==="bridge"){ctx.strokeStyle="rgba(230,235,240,.8)";ctx.lineWidth=1.2;const top=P(roadW+.1,14);for(let i=0;i<8;i++){const b=P(roadW+.1,i*2);ctx.beginPath();ctx.moveTo(top[0],hz-h*.28);ctx.lineTo(b[0],b[1]-.35*K/(1+i*2*.35));ctx.stroke()}ctx.fillStyle="#D5DADF";ctx.fillRect(top[0]-3,hz-h*.3,6,h*.3)}
+  if(kind==="roundabout"||kind==="grid"){ // approaching sign
+    const d=30-(t*sp)%30+1, s=1/(1+d*.35), a=P(roadW+.45,d), r=Math.max(2,.2*K*s), pole=.55*K*s;
+    ctx.fillStyle="#6D737A";ctx.fillRect(a[0]-1,a[1]-pole,2,pole);
+    if(kind==="roundabout"){ctx.fillStyle="#0B5CAD";ctx.beginPath();ctx.arc(a[0],a[1]-pole-r,r,0,7);ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(1,r*.18);ctx.beginPath();ctx.arc(a[0],a[1]-pole-r,r*.55,.3,5.6);ctx.stroke()}
+    else{ctx.fillStyle="#fff";ctx.fillRect(a[0]-r,a[1]-pole-r*2.4,r*2,r*2.4);ctx.strokeStyle="#C8102E";ctx.lineWidth=Math.max(1,r*.2);ctx.beginPath();ctx.arc(a[0],a[1]-pole-r*1.5,r*.7,0,7);ctx.stroke();ctx.fillStyle="#111";ctx.font=`700 ${Math.max(5,r*.7)}px Arial`;ctx.textAlign="center";ctx.fillText("30",a[0],a[1]-pole-r*1.25)}
+  }
+  // car hood
+  ctx.fillStyle="#15191D";ctx.beginPath();ctx.moveTo(0,h);ctx.lineTo(0,h*.93);ctx.quadraticCurveTo(w/2,h*.83,w,h*.93);ctx.lineTo(w,h);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.07)";ctx.beginPath();ctx.moveTo(w*.2,h*.9);ctx.quadraticCurveTo(w/2,h*.845,w*.8,h*.9);ctx.lineTo(w*.8,h*.905);ctx.quadraticCurveTo(w/2,h*.855,w*.2,h*.905);ctx.fill();
+}
+const thumbCache={};
+function thumb(v){
+  const key=v.kind+(v.id);
+  if(thumbCache[key])return thumbCache[key];
+  const c=document.createElement("canvas");c.width=320;c.height=180;
+  try{drawScene(c.getContext("2d"),320,180,2.3+v.dur%3,v.kind);thumbCache[key]=c.toDataURL("image/jpeg",.8)}catch(e){thumbCache[key]=""}
+  return thumbCache[key];
+}
+
+/* ---------- maps (schematic) ---------- */
+function pinSVG(x,y){return `<g transform="translate(${x} ${y})"><circle r="15" fill="var(--yellow)" opacity=".28"/><path d="M0 0c-6-7-9-10.5-9-15a9 9 0 0118 0c0 4.5-3 8-9 15z" fill="var(--red)" stroke="#fff" stroke-width="1.8"/><circle cy="-15" r="3.2" fill="#fff"/></g>`}
+function blocks(skip){let s="";for(let x=0;x<340;x+=38)for(let y=0;y<180;y+=30){if(skip&&skip(x,y))continue;s+=`<rect class="m-block" x="${x+4}" y="${y+4}" width="30" height="22" rx="2"/>`}return s}
+function road(d,w){return `<path class="m-edge" d="${d}" stroke-width="${w+3}"/><path class="m-road" d="${d}" stroke-width="${w}"/>`}
+function mapSVG(v,interactive){
+  const k=v.map&&v.map.kind||v.kind; let b="";
+  if(k==="grid"){
+    b=blocks()+`<rect class="m-green" x="200" y="128" width="64" height="44" rx="3"/>`+
+      road("M0 48H340",9)+road("M0 118H340",10)+road("M70 0V180",8)+road("M175 0V180",8)+road("M275 0V180",8)+
+      ((v.map&&(v.map.upload||v.map.water))?`<path class="m-water" d="M300 0C318 50 306 120 328 180H340V0Z"/><text class="m-txt" x="318" y="100" transform="rotate(80 318 100)">Mosel</text>`:"");
+    const lab=v.map&&v.map.labels||(v.map&&v.map.upload?["Paulinstr.","Thebäerstr."]:["Gilbertstr.","Hohenzollernstr."]);
+    b+=`<text class="m-txt" x="8" y="112">${lab[0]}</text><text class="m-txt" x="80" y="20" transform="rotate(90 80 20)">${lab[1]}</text>`;
+    if(!v.map) b+=`<path class="m-route" d="M8 118H168"/><path d="M160 112l9 6-9 6" fill="var(--blue)"/>`+`<g transform="translate(52 132)"><circle r="9" fill="#fff" stroke="#C8102E" stroke-width="2.5"/><text y="3.5" text-anchor="middle" font-size="9" font-weight="700" fill="#111" font-family="Arial">30</text></g>`+pinSVG(175,118);
+    else if(v.map.px!=null){if(v.map.labels)b+=`<path class="m-route" d="M8 118H${v.map.px-8}"/><path d="M${v.map.px-16} 112l9 6-9 6" fill="var(--blue)"/>`;b+=pinSVG(v.map.px,v.map.py)}
+  }else if(k==="square"){
+    b=blocks((x,y)=>Math.hypot(x+19-170,y+15-95)<50)+
+      road("M0 60L170 95",9)+road("M0 150L170 95",9)+road("M340 40L170 95",10)+road("M340 140L170 95",10)+road("M120 0L170 95",8)+road("M230 180L170 95",8)+
+      `<circle cx="170" cy="95" r="28" fill="var(--map-road)" stroke="var(--map-edge)" stroke-width="1.5"/>`+
+      `<path class="m-tram" d="M0 150L170 95 340 40"/><path class="m-tram" d="M120 0L170 95 230 180"/>`+
+      `<path class="m-route" d="M8 62L160 92Q176 98 186 116L226 172"/><path d="M218 170l9 7 1-11" fill="var(--blue)"/>`+
+      `<text class="m-txt b" x="140" y="137">Barbarossaplatz</text><text class="m-txt" x="250" y="46" transform="rotate(-17 250 46)">Hohenstaufenring</text><text class="m-txt" x="10" y="54" transform="rotate(11 10 54)">Luxemburger Str.</text><text class="m-txt" x="126" y="16" transform="rotate(62 126 16)">Roonstr.</text>`+
+      `<text class="m-txt" x="270" y="170" fill="var(--map-tram)">- - Straßenbahn</text>`+pinSVG(168,98);
+  }else if(k==="bridge"){
+    b=blocks((x,y)=>x>190&&x<300)+`<path class="m-water" d="M205 0C232 60 214 120 240 180H300C276 120 292 60 266 0Z"/>`+
+      `<rect class="m-green" x="12" y="8" width="70" height="36" rx="4"/>`+
+      road("M70 0V180",8)+road("M40 172Q88 90 150 67",8)+road("M96 72L340 52",12)+
+      `<path class="m-route" d="M46 164Q90 92 150 69L200 65"/><path d="M196 59l10 5-9 6" fill="var(--blue)"/>`+
+      `<text class="m-txt" x="238" y="120" transform="rotate(76 238 120)">Mosel</text><text class="m-txt b" x="258" y="44" transform="rotate(-4 258 44)">Adenauerbrücke</text><text class="m-txt" x="78" y="130" transform="rotate(90 78 130)">Saarstr.</text><text class="m-txt" x="18" y="30">Park</text><text class="m-txt" x="96" y="134" transform="rotate(-58 96 134)">Auffahrt</text>`+pinSVG(150,68);
+  }else if(k==="junction"){
+    b=blocks((x,y)=>Math.abs(y+15-95)<24||Math.abs(x+19-170)<30)+
+      road("M0 95H340",26)+road("M170 0V180",26)+
+      `<path class="m-lane" d="M0 90H150M190 90H340M0 100H150M190 100H340"/><path class="m-lane" d="M165 0V75M165 115V180M175 0V75M175 115V180"/>`+
+      `<path class="m-route" d="M8 103H158Q164 103 164 96V12"/><path d="M158 16l6-10 6 10" fill="var(--blue)"/>`+
+      `<text class="m-txt b" x="8" y="76">Kaiserstr.</text><text class="m-txt b" x="190" y="18" transform="rotate(90 190 18)">Südallee</text>`+pinSVG(170,95);
+  }else if(k==="roundabout"){
+    b=blocks((x,y)=>Math.hypot(x+19-170,y+15-90)<48||Math.abs(y+15-90)<14||Math.abs(x+19-170)<14)+
+      road("M0 90H140",9)+road("M200 90H340",9)+road("M170 0V60",9)+road("M170 120V180",9)+
+      `<circle cx="170" cy="90" r="28" fill="none" stroke="var(--map-edge)" stroke-width="14"/><circle cx="170" cy="90" r="28" fill="none" stroke="var(--map-road)" stroke-width="11"/><circle class="m-green" cx="170" cy="90" r="18"/>`+
+      `<path class="m-route" d="M175 176V120A30 30 0 0 0 200 95L330 95"/><path d="M324 89l10 6-10 6" fill="var(--blue)"/>`+
+      `<path d="M200 102h14M200 106h14M200 110h14" stroke="var(--map-label)" stroke-width="1.5"/>`+
+      `<text class="m-txt b" x="202" y="66">Kreisverkehr Konz</text><text class="m-txt" x="8" y="82">Richtung Trier</text><text class="m-txt" x="216" y="112">Überweg</text>`+pinSVG(170,120);
+  }
+  return `<svg class="map" viewBox="0 0 340 180" ${interactive?'id="pickmap" style="cursor:crosshair"':""} role="img" aria-label="Schematischer Kartenausschnitt: ${esc(v.address||"")}"><rect class="m-land" width="340" height="180"/>${b}</svg>`;
+}
+function areaMap(vids,label){
+  let pins="";
+  vids.forEach(v=>{const x=170+(v.lon-CENTER.lon)*70*4.5,y=90-(v.lat-CENTER.lat)*111*4.5;pins+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="var(--red)" stroke="#fff" stroke-width="1.5"/>`});
+  return `<svg class="map" viewBox="0 0 340 180" role="img" aria-label="${esc(label)}"><rect class="m-land" width="340" height="180"/>
+  <path d="M30 180C100 150 135 125 148 95S200 35 310 0" stroke="var(--map-water)" stroke-width="9" fill="none"/><path d="M126 180C134 152 142 132 147 116" stroke="var(--map-water)" stroke-width="6" fill="none"/>
+  <path class="m-edge" d="M20 90H320M170 10V170" stroke-width="3" opacity=".6"/>
+  <circle cx="170" cy="90" r="3.5" fill="var(--ink)"/><text class="m-txt b" x="178" y="86">Trier</text>
+  <text class="m-txt" x="116" y="136">Konz</text><text class="m-txt" x="196" y="62">Ehrang</text><text class="m-txt" x="56" y="160">Mosel</text>${pins}</svg>`;
+}
+
+/* ---------- helpers ---------- */
+function schoolBy(n){return SCHOOLS.find(s=>s.name===n)}
+function vidsOf(n){return VIDEOS.filter(v=>v.school===n)}
+function owns(n){return S.owned.includes(n)}
+function unlocked(v){return !!v.sample||owns(v.school)}
+function ownedVideos(){return VIDEOS.filter(v=>owns(v.school))}
+function schoolVideos(){return vidsOf("Fahrschule Moselblick")}
+function nearbySchools(place,max){return SCHOOLS.map(s=>Object.assign({},s,{d:distKm(place,s)})).filter(s=>s.d<=max).sort((a,b)=>a.d-b.d)}
+function vById(id){return VIDEOS.find(v=>v.id===id)}
+function lines(v,lang){return (v.text[lang]||v.text.de)}
+/* Stimme passend zur Sprache wählen: ohne ausdrückliche Wahl lesen viele Browser mit der Standardstimme (Deutsch) vor */
+let VOICES=[];
+function loadVoices(){try{VOICES=speechSynthesis.getVoices()||[]}catch(e){VOICES=[]}}
+try{if("speechSynthesis" in window){loadVoices();speechSynthesis.addEventListener("voiceschanged",loadVoices)}}catch(e){}
+function pickVoice(tag){
+  if(!VOICES.length)loadVoices();
+  const norm=x=>String(x||"").replace("_","-").toLowerCase(), t=norm(tag), base=t.split("-")[0];
+  const exact=VOICES.filter(v=>norm(v.lang)===t), same=VOICES.filter(v=>norm(v.lang).split("-")[0]===base);
+  const pool=exact.length?exact:same;
+  return pool.find(v=>/natural|neural|google|premium|enhanced/i.test(v.name))||pool[0]||null;
+}
+/* Spricht nur mit einer Stimme der passenden Sprache. Ohne passende Stimme bleibt es still,
+   sonst würde der Browser den Text mit seiner Standardstimme (meist Deutsch) vorlesen. */
+let speakSeq=0;
+function speakNow(text,lang,v){
+  const u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=1.02;if(v)u.voice=v;
+  const busy=speechSynthesis.speaking||speechSynthesis.pending;
+  if(busy){speechSynthesis.cancel();const seq=speakSeq;setTimeout(()=>{if(seq===speakSeq)speechSynthesis.speak(u)},80)}
+  else speechSynthesis.speak(u);
+  try{speechSynthesis.resume()}catch(e){}
+}
+function speak(text,lang){try{
+  if(!("speechSynthesis" in window))return false;
+  ++speakSeq;
+  const isDe=lang.toLowerCase().startsWith("de");
+  let v=pickVoice(lang);
+  if(v){speakNow(text,lang,v);return true}
+  if(!VOICES.length){ /* Stimmenliste noch leer (typisch auf Handys): sofort mit Sprachcode sprechen.
+       Nicht warten, sonst gilt es nicht mehr als Antippen und iOS blockiert den Ton. */
+    speakNow(text,lang,null);return true}
+  if(isDe){speakNow(text,lang,null);return true}
+  return false;
+}catch(e){return false}}
+function voLabel(v){const has=v.text[S.lang];if(S.lang==="de"||!has)return "Voiceover · "+v.voice;return "Voiceover · KI-Stimme "+LANGS.find(x=>x[0]===S.lang)[1]}
+const DE_NAME={de:"Deutsch",en:"Englisch",tr:"Türkisch",ar:"Arabisch",uk:"Ukrainisch",pl:"Polnisch"};
+function voHint(ok){const el=document.getElementById("vohint");if(!el)return;const L=[S.lang,DE_NAME[S.lang]];
+  el.hidden=ok;if(ok)return;
+  const ua=navigator.userAgent, how=/Android/i.test(ua)
+    ?`Installieren: Einstellungen → System → Sprachen → Sprachausgabe → bei „Sprachdienste von Google“ auf das Zahnrad → Sprachdaten installieren → ${L[1]}. Danach Chrome neu starten.`
+    :/iPhone|iPad/i.test(ua)?`Installieren: Einstellungen → Bedienungshilfen → Gesprochene Inhalte → Stimmen → ${L[1]}.`
+    :`Installieren: Windows-Einstellungen → Zeit und Sprache → Sprache → ${L[1]} mit Sprachausgabe hinzufügen, oder den Link in Microsoft Edge öffnen.`;
+  el.innerHTML=`<b>Keine Stimme für ${L[1]} auf diesem Gerät.</b><span style="font-size:13px">Der Text steht unten. ${how}</span><span style="font-size:12px;color:var(--muted)">In der echten App kommt die Stimme vom Server und funktioniert auf jedem Handy.</span>`}
+/* iOS gibt die Sprachausgabe erst nach einem Antippen frei: beim ersten Tippen einmal stumm "anwerfen" */
+let speechUnlocked=false;
+function unlockSpeech(){if(speechUnlocked)return;speechUnlocked=true;try{if("speechSynthesis" in window){const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u);loadVoices()}}catch(e){}}
+document.addEventListener("touchend",unlockSpeech,{once:true,passive:true});
+document.addEventListener("click",unlockSpeech,{once:true});
+function hush(){speakSeq++;try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}}
+
+/* ---------- navigation ---------- */
+function go(screen,push){stopPlayer();if(push!==false)S.hist.push(S.screen);S.screen=screen;render(true)}
+function back(){stopPlayer();S.screen=S.hist.pop()||"welcome";render(true)}
+
+function bar(title,canBack,extra){return `<div class="bar">${canBack?`<button class="back" data-a="back" aria-label="Zurück">${I.back}</button>`:`<span style="width:4px"></span>`}<h2>${title}</h2>${extra||""}</div>`}
+function tabs(active){
+  if(S.mode==="kunde")return `<nav class="tabs"><button class="tab" data-a="tab-home" ${active==="home"?'aria-current="page"':""}>${I.home}Start</button><button class="tab" data-a="tab-lib" ${active==="lib"?'aria-current="page"':""}>${I.lib}Meine Videos</button><button class="tab" data-a="tab-acc" ${active==="acc"?'aria-current="page"':""}>${I.user}Konto</button></nav>`;
+  return `<nav class="tabs"><button class="tab" data-a="tab-dash" ${active==="dash"?'aria-current="page"':""}>${I.chart}Übersicht</button><button class="tab" data-a="tab-up" ${active==="up"?'aria-current="page"':""}>${I.upload}Hochladen</button></nav>`;
+}
+function vrow(v,locked){
+  const tb=thumb(v);
+  return `<button class="vrow" data-a="open" data-id="${v.id}"><div class="thumb">${tb?`<img src="${tb}" alt="">`:""}<span class="dur num">${fmt(v.dur)}</span>${locked?`<span class="lock">${I.lock}</span>`:""}</div>
+  <div><p class="t">${esc(v.title)}</p><div class="m"><span>${esc(v.school)}</span><span>${esc(v.district)}</span></div>
+  <div class="row" style="gap:6px;margin-top:6px">${sign(v.topic,18)}<span class="tag">${esc(v.topic)}</span>${v.isNew?'<span class="tag new">Neu</span>':""}${v.sample?'<span class="tag free">Gratis</span>':""}</div></div></button>`;
+}
+function initials(n){return n.replace("Fahrschule ","").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+function avatar(n,sz){sz=sz||40;return `<span style="width:${sz}px;height:${sz}px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:${sz*.4}px;flex:none">${initials(n)}</span>`}
+function schoolRow(s,d){
+  const n=vidsOf(s.name).length;
+  return `<button class="city" data-a="school" data-s="${esc(s.name)}">${avatar(s.name)}<div><b>${esc(s.name)}</b><small class="num">${esc(s.district)} · ${n} ${n===1?"Video":"Videos"}${d!=null?" · "+km(d):""}</small></div>
+  <span class="end">${owns(s.name)?'<small style="color:var(--green);font-weight:600">gekauft</small>':`<b class="num" style="font-size:15px">${s.price}</b>`}</span></button>`;
+}
+
+/* ---------- customer screens ---------- */
+const K={};
+function doRestore(){
+  S.restore="busy";if(S.screen!=="account"){S.hist=[];S.screen="account"}render();
+  setTimeout(()=>{const found=receipts().filter(n=>!owns(n));found.forEach(n=>S.owned.push(n));save();
+    S.restore=found.length?`${found.length===1?"1 Paket":found.length+" Pakete"} wiederhergestellt: ${found.map(n=>n.replace("Fahrschule ","")).join(", ")}`:"Keine weiteren Käufe gefunden. Alle Pakete sind bereits freigeschaltet.";
+    if(S.screen==="account")render()},1200);
+}
+function openGate(kind){
+  if(kind==="restore"){const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="login";
+    sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Anmelden"><span class="grab"></span>
+    <div class="row" style="gap:12px">${LOGO.replace('width="40" height="40"','width="48" height="48"')}<div><span class="lbl">Anmelden, um fortzufahren</span><b style="font-family:var(--display);font-size:19px;display:block">Käufe wiederherstellen</b></div></div>
+    <p style="margin:0;font-size:14px">Melde dich an. Danach suchen wir deine Käufe bei Apple bzw. Google und schalten die Pakete wieder frei.</p>
+    <button class="btn ghost" data-a="login" data-p="google" style="padding:13px">Mit Google anmelden</button>
+    <button class="btn" data-a="login" data-p="apple" style="background:var(--ink);color:var(--surface)">Mit Apple anmelden</button>
+    <button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;renderNotes();return}
+  const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="login";
+  sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Anmelden"><span class="grab"></span>
+  <div class="row" style="gap:12px">${avatar(S.pendingSchool,48)}<div><span class="lbl">Anmelden, um fortzufahren</span><b style="font-family:var(--display);font-size:19px;display:block">Paket von ${esc(S.pendingSchool)}</b></div></div>
+  <p style="margin:0;font-size:14px">Melde dich an, damit dein Kauf mit deinem Konto verknüpft ist und auf jedem Handy funktioniert.</p>
+  <button class="btn ghost" data-a="login" data-p="google" style="padding:13px"><span style="width:22px;height:22px;border-radius:50%;border:2px solid var(--blue);display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--blue)">G</span>Mit Google anmelden</button>
+  <button class="btn" data-a="login" data-p="apple" style="background:var(--ink);color:var(--surface)">Mit Apple anmelden</button>
+  <p class="hint">„Mit Apple“ erscheint nur auf dem iPhone. Mit der Anmeldung akzeptierst du die Nutzungsbedingungen und die Datenschutzerklärung.</p>
+  <button class="btn ghost" data-a="closesheet">Später</button></div>`;
+  renderNotes();
+}
+function openLoginSheet(p){
+  const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="login";
+  const g=p==="google";
+  sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Konto wählen"><span class="grab"></span>
+  <span class="lbl">Anmeldedialog · simuliert</span>
+  <b style="font-family:var(--display);font-size:20px">${g?"Konto wählen, um mit DriveTestHelper fortzufahren":"Mit Apple bei DriveTestHelper anmelden"}</b>
+  <button class="city" data-a="loginok" data-p="${p}">${avatar("Lea Schmidt",40)}<div><b>Lea Schmidt</b><small>${g?"lea.schmidt@gmail.com (Beispielkonto)":"E-Mail verbergen: Apple leitet weiter"}</small></div></button>
+  <p class="hint">DriveTestHelper erhält Name und E-Mail-Adresse. Ein Passwort wird nicht gespeichert.</p>
+  <button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;
+  renderNotes();
+}
+K.splash=()=>`<div class="scr" style="justify-content:center;align-items:center;text-align:center;gap:14px">${LOGO.replace('width="40" height="40"','width="72" height="72"')}<h3 class="h" style="font-size:30px">DriveTestHelper</h3><div class="row"><span class="spin" style="color:var(--blue)"></span><span class="sub">Angemeldet als ${esc(S.user.name)} · Pakete werden geladen</span></div></div>`;
+K.account=()=>{
+  const r=S.restore;
+  const restoreBox=r==="busy"?`<div class="row"><span class="spin" style="color:var(--blue)"></span><span>Käufe werden bei Apple bzw. Google gesucht …</span></div>`
+    :r?`<div class="toast" role="status">${I.tick.replace('var(--green)','currentColor')}${esc(r)}</div>`:"";
+  if(!S.user)return bar("Konto",false)+`<div class="scr">
+  <div class="card"><span class="lbl">Nicht angemeldet</span>
+    <p style="margin:0;font-size:14px">Melde dich an, um Pakete zu kaufen und sie auf jedem Handy zu nutzen.</p>
+    <button class="btn ghost" data-a="login" data-p="google" style="padding:13px"><span style="width:22px;height:22px;border-radius:50%;border:2px solid var(--blue);display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--blue)">G</span>Mit Google anmelden</button>
+    <button class="btn" data-a="login" data-p="apple" style="background:var(--ink);color:var(--surface)">Mit Apple anmelden</button></div>
+  <div class="card"><span class="lbl">Schon gekauft?</span>
+    <p style="margin:0;font-size:14px">Neues Handy oder App neu installiert? Hol deine Pakete zurück.</p>
+    <button class="btn ghost" data-a="restore">Käufe wiederherstellen</button>${restoreBox}</div>
+  ${langCard()}
+  ${legal()}</div>`+tabs("acc");
+  const mine=S.owned.map(schoolBy);
+  return bar("Konto",false)+`<div class="scr">
+  <div class="row" style="gap:14px">${avatar("Lea Schmidt",56)}<div><h3 class="h" style="font-size:22px">Lea Schmidt</h3><p class="sub">Angemeldet mit ${S.user.via==="apple"?"Apple":"Google"}${S.user.via==="apple"?"":" · lea.schmidt@gmail.com"}</p></div></div>
+  <div class="card"><span class="lbl">Meine Pakete</span>
+    ${mine.length?mine.map(s=>`<div class="row">${avatar(s.name,32)}<b style="flex:1;font-size:15px">${esc(s.name)}</b><span class="tag free">gekauft</span></div>`).join(""):'<p class="sub">Noch keine Pakete gekauft.</p>'}
+    <button class="btn ghost" data-a="restore" ${r==="busy"?"disabled":""}>Käufe wiederherstellen</button>
+    <p class="hint">Hast du das Handy gewechselt oder die App neu installiert? Hier holst du deine Pakete von Apple bzw. Google zurück.</p>${restoreBox}</div>
+  ${langCard()}
+  <div class="menu"><button data-a="logout">Abmelden</button><button data-a="delacc" class="red">Konto löschen</button></div>
+  ${legal()}</div>`+tabs("acc");
+};
+function langCard(){return `<div class="card"><span class="lbl">Sprache</span>
+    <div class="field"><label for="acclang">Voiceover und Text in den Videos</label><select id="acclang">${LANGS.map(l=>`<option value="${l[0]}" ${S.lang===l[0]?"selected":""}>${l[1]}</option>`).join("")}</select></div>
+    <p class="hint">Gilt für alle Videos. Im Video selbst kannst du die Sprache jederzeit kurz umstellen.</p></div>`}
+function legal(){return `<div class="menu" aria-label="Rechtliches"><span>Datenschutzerklärung</span><span>Nutzungsbedingungen</span><span>Impressum</span></div><p class="hint" style="text-align:center">DriveTestHelper · Version 1.0 (Prototyp)</p>`}
+K.delete=()=>bar("Konto löschen",true)+`<div class="scr">
+  <div><h3 class="h" style="font-size:24px">Konto endgültig löschen?</h3><p class="sub" style="margin-top:6px">Das lässt sich nicht rückgängig machen.</p></div>
+  <div class="card"><span class="lbl">Das wird gelöscht</span><ul class="plain">
+    <li>Dein Konto mit Name und E-Mail-Adresse</li>
+    <li>Die Verknüpfung mit deinem ${S.user&&S.user.via==="apple"?"Apple":"Google"}-Login</li>
+    <li>Die Zuordnung deiner Pakete zu diesem Konto</li>
+    <li>Deine Einstellungen, z. B. die Sprache</li></ul></div>
+  <div class="card"><span class="lbl">Das bleibt</span><ul class="plain">
+    <li>Deine Käufe sind bei Apple bzw. Google gespeichert. Mit einem neuen Konto holst du sie über „Käufe wiederherstellen“ zurück.</li>
+    <li>Du hast kein Abo, es gibt nichts zu kündigen.</li>
+    <li>Rechnungen findest du weiterhin bei Apple bzw. Google.</li></ul></div>
+  <label class="check-row"><input type="checkbox" id="delok"> Ich möchte mein Konto und alle Daten dazu endgültig löschen.</label>
+  <button class="btn danger" id="delbtn" data-a="delconfirm" disabled>Konto endgültig löschen</button>
+  <button class="btn ghost" data-a="back">Abbrechen</button></div>`;
+K.welcome=()=>{
+  const v=vById("v0");
+  const mine=S.owned.map(schoolBy);
+  return bar(`<span class="row" style="gap:8px">${LOGO.replace('width="40" height="40"','width="26" height="26"')}DriveTestHelper</span>`,false)+`<div class="scr">
+  ${S.toast?`<div class="toast" role="status">${I.tick.replace('var(--green)','currentColor')}${esc(S.toast)}</div>`:""}
+  <div>${S.user?`<span class="lbl">Hallo ${esc(S.user.name)}</span>`:""}<h3 class="h" style="margin-top:4px">Kenne die Prüfungsstrecke, bevor du sie fährst.</h3><p class="sub" style="margin-top:6px">Deine Fahrschule zeigt dir die kniffligen Stellen, mit Karte und erklärendem Voiceover.</p></div>
+  <div class="card" style="padding:10px">
+    <button class="thumb" data-a="open" data-id="v0" style="border:0;padding:0;cursor:pointer" aria-label="Beispielvideo abspielen"><img src="${thumb(v)}" alt=""><span class="play"><span>${I.play.replace('fill="currentColor"','fill="#0B5CAD"')}</span></span><span class="dur num">${fmt(v.dur)}</span></button>
+    <div><span class="tag free">Kostenloses Beispiel</span><p class="h3" style="margin-top:6px">${esc(v.title)}</p><p class="sub">${esc(v.school)} · ${esc(v.district)}</p></div>
+  </div>
+  ${mine.length?`<div class="card"><span class="lbl">${mine.length===1?"Dein Paket":"Deine Pakete"}</span>
+    ${mine.map(s=>`<div class="row">${avatar(s.name,32)}<b style="flex:1">${esc(s.name)}</b><span class="sub num">${vidsOf(s.name).length} Videos</span></div>`).join("")}
+    <button class="btn" data-a="tab-lib">Videos ansehen</button><button class="btn ghost" data-a="cities">Weitere Fahrschule finden</button></div>`:locCard()}
+  ${S.user?`<p class="hint" style="text-align:center">Angemeldet als ${esc(S.user.name)} (${S.user.via==="apple"?"Apple":"Google"}) · <button class="linkbtn" data-a="tab-acc" style="font-size:12.5px">Konto</button></p>`:""}
+  <p class="hint" style="text-align:center">Demo: Der Standort ist immer Trier.</p>
+  </div>`+tabs("home");
+};
+function locCard(){
+  if(S.loc==="locating")return `<div class="card"><span class="lbl">Dein Standort</span><div class="row"><span class="spin" style="color:var(--blue)"></span><span>Fahrschulen in deiner Nähe werden gesucht …</span></div></div>`;
+  if(S.loc==="denied")return `<div class="card"><span class="lbl">Standort nicht freigegeben</span>
+    <p style="margin:0;font-size:14px">Kein Problem: Suche deine Stadt, dann zeigen wir dir die Fahrschulen dort. Den Standort kannst du jederzeit in den Einstellungen deines Handys freigeben.</p>
+    <button class="btn" data-a="cities">${I.search} Stadt suchen</button></div>`;
+  if(S.loc==="granted"){
+    const here=SIMLOCS[S.simLoc], list=nearbySchools(here,15);
+    if(list.length)return `<div class="card"><span class="lbl">Pakete der Fahrschulen in deiner Nähe</span>
+      <div class="row">${I.loc}<div><b>${here.label}</b><p class="sub">Wähle deine Fahrschule. Jede hat ihr eigenes Videopaket.</p></div></div>
+      <div class="list">${list.map(s=>schoolRow(s,s.d)).join("")}</div>
+      <button class="btn ghost" data-a="cities">${I.search} Andere Stadt suchen</button></div>`;
+    const near=nearbySchools(here,999).slice(0,2);
+    return `<div class="card"><span class="lbl">Dein Standort</span>
+      <div class="row">${I.loc}<div><b>${here.label}</b><p class="sub">In deiner Nähe ist noch keine Fahrschule bei DriveTestHelper.</p></div></div>
+      <button class="btn ghost" data-a="notify">${S.notify?I.tick+" Du wirst benachrichtigt":"Benachrichtigen, sobald eine Fahrschule hier startet"}</button>
+      <span class="lbl">Nächste Fahrschulen</span><div class="list">${near.map(s=>schoolRow(s,s.d)).join("")}</div></div>`;
+  }
+  return `<div class="card"><span class="lbl">Deine Fahrschule finden</span>
+    <p style="margin:0;font-size:14px">Gib deinen Standort frei, dann zeigen wir dir die Fahrschulen in deiner Nähe und ihre Videopakete.</p>
+    <button class="btn" data-a="askloc">${I.loc} Standort freigeben</button>
+    <button class="btn ghost" data-a="cities">${I.search} Stadt selbst suchen</button></div>`;
+}
+K.cities=()=>{
+  const q=S.q.trim().toLowerCase();
+  let body;
+  if(!q){
+    body=`<span class="lbl">Städte mit DriveTestHelper</span><div class="list">${CITIES.map(c=>{const n=nearbySchools(c,15).length;
+      return n?`<button class="city" data-a="city" data-c="${c.name}"><span>${I.pin}</span><div><b>${c.name}</b><small class="num">${n} ${n===1?"Fahrschule":"Fahrschulen"} in der Nähe</small></div></button>`
+      :`<button class="city" disabled><span>${I.pin}</span><div><b>${c.name}</b><small>Noch keine Fahrschulen</small></div></button>`}).join("")}</div>`;
+  }else{
+    const h=CITIES.find(c=>c.name.toLowerCase().startsWith(q))||CITIES.find(c=>c.name.toLowerCase().includes(q));
+    if(!h)body='<p class="sub">Kein Ort gefunden. Versuche es mit einer größeren Stadt in der Nähe.</p>';
+    else{
+      const sch=nearbySchools(h,15);
+      body=sch.length?`<span class="lbl">Fahrschulen in und um ${h.name}</span><div class="list">${sch.map(s=>schoolRow(s,s.d)).join("")}</div><p class="hint">Jede Fahrschule hat ihr eigenes Paket mit ihren Videos. Entfernung ab ${h.name}.</p>`
+       :`<div class="card"><p style="margin:0;font-size:14px">In ${esc(h.name)} ist noch keine Fahrschule bei DriveTestHelper.</p></div><span class="lbl">Nächste Fahrschulen</span><div class="list">${nearbySchools(h,999).slice(0,2).map(s=>schoolRow(s,s.d)).join("")}</div>`;
+    }
+  }
+  return bar("Fahrschule suchen",true)+`<div class="scr">
+  <label class="search">${I.search}<input id="cq" type="search" placeholder="Stadt oder Ort, z. B. Trier oder Konz" value="${esc(S.q)}" aria-label="Stadt suchen"></label>
+  ${S.loc==="granted"?"":`<button class="btn ghost" data-a="askloc">${I.loc} Meinen Standort verwenden</button>`}
+  ${body}</div>`;
+};
+K.school=()=>{
+  const s=schoolBy(S.school), vids=vidsOf(s.name), own=owns(s.name);
+  const topics=[...new Set(vids.map(v=>v.topic))];
+  return bar(esc(s.name),true)+`<div class="scr">
+  <div class="row" style="gap:14px">${avatar(s.name,64)}<div><h3 class="h" style="font-size:24px">${esc(s.name)}</h3><p class="sub">${esc(s.district)} · ${esc(s.since)}</p></div></div>
+  <p style="margin:0;font-size:14px">${esc(s.about)}</p>
+  <div class="row" style="gap:6px;flex-wrap:wrap">${topics.map(t=>`<span class="tag">${sign(t,14)} ${esc(t)}</span>`).join("")}</div>
+  <div class="card"><span class="lbl">Videopaket dieser Fahrschule</span>
+    <ul class="incl">
+      <li>${I.tick}<span><b class="num">${vids.length} Videos</b> von Stellen, die ${esc(s.name.replace("Fahrschule ","Fahrschule "))} in der Prüfung fährt</span></li>
+      <li>${I.tick}<span>Neue Videos dieser Fahrschule kommen automatisch dazu</span></li>
+      <li>${I.tick}<span>Karte zu jeder Stelle mit Fahrweg</span></li>
+      <li>${I.tick}<span>Voiceover als Text in 6 Sprachen</span></li>
+      <li>${I.tick}<span>Einmalig bezahlen, kein Abo</span></li>
+    </ul>
+    ${own?`<button class="btn" data-a="tab-lib">${I.tick.replace('var(--green)','currentColor')} Gekauft · Videos ansehen</button>`:`<button class="btn yellow" data-a="buy">Paket für ${s.price} kaufen</button>`}</div>
+  <span class="lbl">Hier sind die Stellen</span>${areaMap(vids,"Orte der Videos von "+s.name)}
+  <span class="lbl num">${vids.length} ${vids.length===1?"Video":"Videos"}</span>
+  <div class="list">${vids.map(v=>vrow(v,!unlocked(v))).join("")}</div></div>`;
+};
+K.library=()=>{
+  if(!S.owned.length)return bar("Meine Videos",false)+`<div class="scr"><div class="card" style="align-items:flex-start"><span class="lbl">Noch kein Paket</span><p style="margin:0">Wähle deine Fahrschule und kaufe ihr Paket. Dann erscheinen hier ihre Videos.</p><button class="btn" data-a="cities" style="align-self:stretch">Fahrschule finden</button></div><span class="lbl">Kostenlos</span><div class="list">${vrow(vById("v0"))}</div></div>`+tabs("lib");
+  let vids=ownedVideos();
+  const topics=["Alle",...TOPICS.filter(t=>vids.some(v=>v.topic===t))];
+  if(S.filter!=="Alle")vids=vids.filter(v=>v.topic===S.filter);
+  vids=vids.slice().sort(S.sort==="dist"?(a,b)=>a.dist-b.dist:(a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||VIDEOS.indexOf(a)-VIDEOS.indexOf(b));
+  const groups=S.owned.map(n=>({n,v:vids.filter(v=>v.school===n)})).filter(g=>g.v.length);
+  return bar("Meine Videos",false,`<select id="sort" aria-label="Sortierung" style="width:auto;padding:6px 8px;font-size:13px"><option value="new" ${S.sort==="new"?"selected":""}>Neueste zuerst</option><option value="dist" ${S.sort==="dist"?"selected":""}>Nach Entfernung</option></select>`)+`<div class="scr">
+  <div class="chips" role="group" aria-label="Nach Thema filtern">${topics.map(t=>`<button class="chip" data-a="filter" data-t="${t}" aria-pressed="${S.filter===t}">${t}</button>`).join("")}</div>
+  ${groups.map(g=>`<div class="row" style="gap:10px">${avatar(g.n,28)}<span class="h3" style="flex:1">${esc(g.n)}</span><span class="sub num">${g.v.length}</span></div><div class="list">${g.v.map(v=>vrow(v)).join("")}</div>`).join("")||'<p class="sub">Keine Videos zu diesem Thema.</p>'}
+  <button class="btn ghost" data-a="cities">Weitere Fahrschule hinzufügen</button></div>`+tabs("lib");
+};
+/* iPhone/iPad -> Apple Karten, sonst (Android, PC) -> Google Maps. Die Links öffnen auf dem Handy direkt die jeweilige App. */
+function mapLinks(v){
+  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const q=encodeURIComponent(v.title), ll=v.lat+","+v.lon;
+  return ios?{name:"Apple Karten",open:`https://maps.apple.com/?ll=${ll}&q=${q}&z=17`,route:`https://maps.apple.com/?daddr=${ll}&dirflg=d`}
+    :{name:"Google Maps",open:`https://www.google.com/maps/search/?api=1&query=${ll}`,route:`https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=driving`};
+}
+K.player=()=>{
+  const v=vById(S.vid);
+  const opts=LANGS.map(l=>`<option value="${l[0]}" ${S.lang===l[0]?"selected":""}>${l[1]}</option>`).join("");
+  const mp=mapLinks(v);
+  return bar(esc(v.title),true)+`<div class="scr" id="pscr">
+  <div class="player paused" id="player">${v.src?`<video id="pv" src="${v.src}" playsinline preload="metadata"></video>`:`<canvas id="pc" width="640" height="360"></canvas>`}
+    <span class="vo-badge"><i></i><i></i><i></i> <span id="vobadge">${esc(voLabel(v))}</span></span>
+    <div class="ctrl"><button data-a="pp" id="ppb" aria-label="Abspielen">${I.play}</button><span class="num" id="tcur">0:00</span><input type="range" id="scrub" min="0" max="${v.dur}" step="0.1" value="0" aria-label="Position im Video"><span class="num">${fmt(v.dur)}</span><button data-a="snd" id="sndb" aria-label="Voiceover-Ton">${S.sound?I.volOn:I.volOff}</button></div>
+  </div>
+  <div class="toast" id="vohint" hidden role="status" style="background:var(--yellow-soft);color:var(--ink);font-weight:500;flex-direction:column;align-items:flex-start;gap:4px"></div>
+  <div style="display:flex;flex-direction:column;gap:4px"><h3 class="h" style="font-size:22px">${esc(v.title)}</h3><p class="sub"><button class="linkbtn" data-a="school" data-s="${esc(v.school)}" style="font-size:14px">${esc(v.school)}</button> · ${esc(v.district)}</p><div class="row" style="gap:6px;margin-top:4px">${sign(v.topic,20)}<span class="tag">${esc(v.topic)}</span>${v.sample?'<span class="tag free">Gratis</span>':""}</div></div>
+  <section style="display:flex;flex-direction:column;gap:8px"><span class="lbl">Wo ist das?</span>${mapSVG(v)}
+    <div class="coords"><span>${I.pin.replace('width="18" height="18"','width="13" height="13"')} ${esc(v.address)}</span><span class="num">${v.lat.toFixed(4)}° N, ${v.lon.toFixed(4)}° E</span></div>
+    <div class="row" style="gap:8px"><a class="btn ghost" href="${mp.open}" target="_blank" rel="noopener" style="text-decoration:none;flex:1">${I.pin} In ${mp.name} öffnen</a><a class="btn ghost" href="${mp.route}" target="_blank" rel="noopener" style="text-decoration:none;flex:1">Route dorthin</a></div></section>
+  <section class="card" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="lbl">Voiceover als Text</span><label class="selectwrap"><span class="sr" style="position:absolute;left:-9999px">Sprache</span><select id="lang" style="width:auto;padding:6px 8px;font-size:13px">${opts}</select></label></div>
+    <div id="segs"></div></section>
+  </div>`;
+};
+function segsHTML(v){
+  const has=!!v.text[S.lang], L=lines(v,S.lang), rtl=S.lang==="ar"&&has;
+  return (has?"":`<p class="hint" style="padding:0 10px 4px">Übersetzung folgt. Im echten Produkt wird der Text beim Veröffentlichen automatisch übersetzt. Hier siehst du das Original.</p>`)+
+    `<div ${rtl?'dir="rtl" lang="ar"':""}>`+L.map((s,i)=>`<button class="seg" data-a="seek" data-i="${i}"><span class="ts num">${fmt(v.starts[i])}</span><span>${esc(s)}</span></button>`).join("")+`</div>`;
+}
+
+/* ---------- player ---------- */
+let P=null;
+function mountPlayer(){
+  const v=vById(S.vid);$("#segs").innerHTML=segsHTML(v);
+  if(!("speechSynthesis" in window)){$("#player").insertAdjacentHTML("afterend",`<div class="toast" style="background:var(--yellow-soft);color:var(--ink)" role="status">Dieser Browser kann keine Sprachausgabe, daher kein Voiceover. Öffne den Link direkt in Chrome (Android) oder Safari (iPhone).</div>`)}
+  P={v,t:0,playing:false,last:0,seg:-1,raf:0,el:null,ctx:null};
+  if(v.src){P.el=$("#pv");P.el.addEventListener("timeupdate",()=>{P.t=P.el.currentTime;tick()});P.el.addEventListener("ended",()=>setPlaying(false))}
+  else{const c=$("#pc");P.ctx=c.getContext("2d");drawScene(P.ctx,c.width,c.height,0,v.kind)}
+  $("#scrub").addEventListener("input",e=>{seek(+e.target.value)});
+  tick();
+}
+function loop(ts){
+  if(!P)return;
+  if(P.playing&&!P.v.src){P.t+=Math.min(.1,(ts-(P.last||ts))/1000);P.last=ts;if(P.t>=P.v.dur){P.t=P.v.dur;setPlaying(false)}drawScene(P.ctx,640,360,P.t,P.v.kind);tick()}
+  P.raf=requestAnimationFrame(loop);
+}
+function setPlaying(on){
+  if(!P)return;P.playing=on;P.last=0;
+  if(on&&P.t>=P.v.dur-.05)P.t=0;
+  $("#player").classList.toggle("paused",!on);
+  $("#ppb").innerHTML=on?I.pause:I.play;$("#ppb").setAttribute("aria-label",on?"Pause":"Abspielen");
+  if(P.v.src){try{on?P.el.play():P.el.pause()}catch(e){}}
+  if(on){P.seg=-1;if(!P.raf)P.raf=requestAnimationFrame(loop)}else hush();
+  tick();
+}
+function seek(t){if(!P)return;P.t=Math.max(0,Math.min(P.v.dur,t));if(P.v.src){try{P.el.currentTime=P.t}catch(e){}}else drawScene(P.ctx,640,360,P.t,P.v.kind);P.seg=-1;hush();tick()}
+function tick(){
+  if(!P)return;const v=P.v;
+  $("#tcur").textContent=fmt(P.t);const sc=$("#scrub");if(document.activeElement!==sc)sc.value=P.t;
+  let idx=0;v.starts.forEach((s,i)=>{if(P.t>=s)idx=i});
+  if(idx!==P.seg){P.seg=idx;document.querySelectorAll(".seg").forEach((el,i)=>el.classList.toggle("on",i===idx));
+    if(P.playing&&S.sound){const l=LANGS.find(x=>x[0]===(v.text[S.lang]?S.lang:"de"));voHint(speak(lines(v,S.lang)[idx],l[2]))}}
+}
+function stopPlayer(){if(!P)return;cancelAnimationFrame(P.raf);if(P.el){try{P.el.pause()}catch(e){}}hush();P=null}
+
+/* ---------- side notes ---------- */
+const NOTES={
+welcome:["Startseite","Ohne Kauf sieht man ein kostenloses Beispielvideo. Die App erkennt die Stadt per GPS, sobald der Nutzer den Standort freigibt, und schlägt das passende Paket vor."],
+buy:["Kauf","Apple und Google verlangen für digitale Inhalte ihren eigenen In-App-Kauf (15–30 % Provision). Jede Fahrschule ist ein eigenes Produkt im Store. RevenueCat bestätigt den Kauf und verknüpft ihn mit dem Google- bzw. Apple-Konto. So bleibt das Paket auch auf einem neuen Handy freigeschaltet."],
+library:["Meine Videos","Alle Videos der gekauften Fahrschul-Pakete, gruppiert nach Fahrschule und filterbar nach Thema. Wer mehrere Pakete kauft, sieht hier alle."],
+player:["Video, Karte, Voiceover","Das Video wird gestreamt (HLS über Mux oder Cloudflare Stream). Die Karte kommt in der echten App von Apple Karten (iPhone) bzw. Google Maps (Android) mit Pin und Fahrweg. Der Knopf darunter öffnet die Stelle direkt in der Karten-App des Handys, „Route dorthin“ startet die Navigation. Der Voiceover-Text hat Zeitstempel. Jede Sprache wird einmal mit DeepL übersetzt und dann gespeichert. Stellt man die Sprache um, spricht eine KI-Stimme in dieser Sprache (im Prototyp die Stimme des Browsers). In der echten App erzeugt der Server beim Veröffentlichen für jede Sprache eine eigene Tonspur (z. B. mit ElevenLabs). Die läuft dann statt der deutschen Originalstimme."],
+};
+NOTES.loc=["Standort-Freigabe","Das Handy fragt einmal nach der Erlaubnis. Vorher erklärt die App, wofür sie den Standort braucht. So stimmen mehr Nutzer zu, und Apple verlangt das auch. Der genaue Standort bleibt auf dem Handy. Zum Server geht nur die Frage, welche Fahrschulen in der Nähe sind."];
+NOTES.welcome=["Ohne Anmeldung nutzbar","Beim Öffnen braucht man kein Konto: Beispielvideo mit Karte und Transkript, darunter die Pakete der Fahrschulen in der Nähe. So akzeptiert Apple die App, weil sie auch ohne Konto etwas zeigt. Im Backend: PostGIS <code>ST_DWithin(fahrschule.ort, nutzer.ort, 15000)</code>. In der Demo ist der Standort immer Trier."];
+NOTES.cities=["Stadtsuche","Ohne Standort sucht man eine Stadt und bekommt die Fahrschulen dort, sortiert nach Entfernung zum gesuchten Ort. Probiere „Trier“, „Konz“ oder „Bitburg“."];
+NOTES.school=["Fahrschule = Paket","Jede Fahrschule hat ihr eigenes Videopaket mit eigenem Preis. Das Profil ist gleichzeitig die Kaufseite. Wer kauft, bekommt alle Videos dieser Fahrschule und alle künftigen."];
+NOTES.welcomeBack=["Automatisch angemeldet","Nach der ersten Anmeldung bleibt der Nutzer auf dem Gerät angemeldet. Die App speichert dafür ein Sitzungs-Token im Schlüsselbund (iPhone) bzw. Keystore (Android) und erneuert es im Hintergrund. Beim nächsten Öffnen geht es ohne Login direkt zu den gekauften Paketen. Probiere „App schließen und neu öffnen“."];
+NOTES.splash=["App startet","Die App findet ein gespeichertes Sitzungs-Token, prüft es beim Server und lädt die gekauften Pakete. Der Nutzer muss nichts tun."];
+NOTES.account=["Konto-Seite","Pflicht für den App Store: Käufe wiederherstellen und Konto löschen müssen in der App erreichbar sein. „Käufe wiederherstellen“ fragt über RevenueCat bei Apple bzw. Google nach, welche Pakete auf dem Store-Konto gekauft wurden, und schaltet sie für das DriveTestHelper-Konto frei. Datenschutz, Nutzungsbedingungen und Impressum müssen ebenfalls erreichbar sein. Die eingestellte Sprache gilt für Voiceover und Text aller Videos und wird gespeichert, bei angemeldeten Nutzern später im Konto, damit sie auf jedem Handy gleich ist."];
+NOTES.delete=["Konto löschen","Apple verlangt, dass man das Konto direkt in der App löschen kann, nicht nur per E-Mail. Beim Löschen werden die Nutzerdaten im Backend entfernt. Bei „Mit Apple anmelden“ muss die App zusätzlich den Apple-Zugang über Apples Schnittstelle widerrufen. Die Käufe selbst bleiben beim Store und lassen sich mit einem neuen Konto wiederherstellen."];
+NOTES.login=["Anmeldung beim Auswählen eines Pakets","Erst wenn man ein Paket öffnet, kommt die Anmeldung, nur mit Apple oder Google. Das Konto verknüpft die Käufe, damit sie auf jedem Handy wiederhergestellt werden können (Supabase Auth oder Firebase Auth). Apple verlangt außerdem, dass man das Konto in der App löschen kann."];
+const FLOW_K=[["welcome","Beispielvideo mit Karte und Transkript"],["loc","Standort: Pakete in Trier"],["login","Paket wählen → anmelden"],["school","Paket der Fahrschule"],["buy","Kaufen"],["library","Meine Videos"],["account","Konto: wiederherstellen, löschen"]];
+function renderNotes(){
+  const key=S.sheet||(S.screen==="welcome"&&S.user?"welcomeBack":S.screen);
+  const n=NOTES[key]||NOTES.welcome;
+  $("#note").innerHTML=`<span class="lbl">Im echten Produkt</span><h3>${n[0]}</h3><p>${n[1]}</p>`;
+  
+  const flow=FLOW_K;
+  let cur=flow.findIndex(f=>f[0]===key);if(key==="cities"||key==="loc")cur=1;if(key==="delete")cur=6;if(key==="player")cur=S.owned.length?5:0;
+  $("#flowlbl").textContent=S.mode==="kunde"?"Ablauf Fahrschüler":"Ablauf Fahrschule";
+  $("#flow").innerHTML=flow.map((f,i)=>`<li class="${i===cur?"on":i<cur?"done":""}">${f[1]}</li>`).join("");
+}
+
+/* ---------- render ---------- */
+function render(resetScroll){
+  const app=$("#app");
+  const prev=app.querySelector(".scr");const top=prev?prev.scrollTop:0;
+  app.innerHTML=K[S.screen]();if(S.toast&&S.screen==="welcome"){const t=S.toast;setTimeout(()=>{if(S.toast===t){S.toast=null;const el=document.querySelector("#app .toast");if(el)el.remove()}},3500)}
+  const scr=app.querySelector(".scr");if(scr&&!resetScroll)scr.scrollTop=top;
+  if(S.mode==="kunde"&&S.screen==="player")mountPlayer();
+  if(S.mode==="kunde"&&S.screen==="welcome"&&S.loc===null&&!S.locAsked){S.locAsked=true;setTimeout(()=>{if(S.loc===null&&!S.sheet&&S.mode==="kunde"&&S.screen==="welcome")openLocSheet()},700)}
+  bindInputs();renderNotes();
+}
+function bindInputs(){
+  const cq=$("#cq");if(cq)cq.addEventListener("input",e=>{S.q=e.target.value;const pos=e.target.selectionStart;render();const n=$("#cq");n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}});
+  const dk=$("#delok");if(dk)dk.addEventListener("change",e=>{$("#delbtn").disabled=!e.target.checked});
+  const al=$("#acclang");if(al)al.addEventListener("change",e=>{S.lang=e.target.value;kvSet(LANGK,S.lang)});
+  const so=$("#sort");if(so)so.addEventListener("change",e=>{S.sort=e.target.value;render()});
+  const lg=$("#lang");if(lg)lg.addEventListener("change",e=>{S.lang=e.target.value;kvSet(LANGK,S.lang);hush();$("#segs").innerHTML=segsHTML(P.v);const b=$("#vobadge");if(b)b.textContent=voLabel(P.v);voHint(true);P.seg=-1;tick()});
+}
+
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-a]");if(!b||b.disabled)return;const a=b.dataset.a;
+  switch(a){
+    case "back":back();break;
+    case "tab-home":stopPlayer();S.hist=[];S.screen="welcome";render(true);break;
+    case "tab-lib":stopPlayer();S.hist=[];S.screen="library";render(true);break;
+    case "cities":go("cities");break;
+    case "city":S.q=b.dataset.c;render();break;
+    case "login":openLoginSheet(b.dataset.p);break;
+    case "tab-acc":stopPlayer();S.hist=[];S.screen="account";S.restore=null;render(true);break;
+    case "restore":if(!S.user){S.pendingRestore=true;openGate("restore");break}doRestore();break;
+    case "delacc":go("delete");break;
+    case "delconfirm":b.disabled=true;b.innerHTML='<span class="spin"></span> Konto wird gelöscht';setTimeout(()=>{stSet(null);kvSet(LANGK,null);S.lang="de";S.user=null;S.owned=[];S.hist=[];S.screen="welcome";S.toast="Dein Konto wurde gelöscht.";render(true)},900);break;
+    case "logout":S.toast="Du bist abgemeldet.";S.user=null;stSet(JSON.stringify({user:null,purchases:S.owned,loc:S.loc==="granted"?"granted":null}));S.owned=[];S.hist=[];S.screen="welcome";render(true);break;
+    case "loginok":closeSheet();S.toast=null;S.user={name:"Lea",via:b.dataset.p};accountPurchases().forEach(n=>{if(!owns(n))S.owned.push(n)});save();if(S.pendingSchool){stopPlayer();S.school=S.pendingSchool;S.pendingSchool=null;S.hist.push(S.screen);S.screen="school"}render(true);if(S.pendingRestore){S.pendingRestore=false;doRestore()}break;
+    case "open":{const v=vById(b.dataset.id);if(!unlocked(v)){if(!S.user){S.pendingSchool=v.school;openGate();return}S.school=v.school;if(S.screen!=="school")go("school");return}S.vid=v.id;go("player");break}
+    case "filter":S.filter=b.dataset.t;render();break;
+    case "buy":openSheet();break;
+    case "pp":setPlaying(!P.playing);break;
+    case "snd":S.sound=!S.sound;b.innerHTML=S.sound?I.volOn:I.volOff;if(!S.sound)hush();break;
+    case "seek":seek(P.v.starts[+b.dataset.i]+.01);if(!P.playing)setPlaying(true);break;
+    case "confirmbuy":confirmBuy(b);break;
+    case "closesheet":closeSheet();break;
+    case "aftersale":closeSheet();S.hist=[];S.screen="library";render(true);break;
+    case "askloc":openLocSheet();break;
+    case "locallow":closeSheet();S.loc="locating";S.hist=[];S.screen="welcome";render(true);
+      setTimeout(()=>{if(S.loc!=="locating")return;S.loc="granted";save();if(S.mode==="kunde"&&S.screen==="welcome")render()},1100);break;
+    case "locdeny":closeSheet();S.loc="denied";if(S.screen==="welcome")render();break;
+    case "notify":S.notify=true;render();break;
+    case "school":if(!S.user){S.pendingSchool=b.dataset.s;openGate();break}S.school=b.dataset.s;go("school");break;
+  }
+});
+function openLocSheet(){
+  const sh=$("#sheet");sh.hidden=false;sh.classList.add("center");S.sheet="loc";
+  sh.innerHTML=`<div class="alert" role="alertdialog" aria-label="Standort freigeben">
+    <div class="alert-b"><span class="lbl" style="font-size:10px">Systemdialog · simuliert</span>
+    <b>„DriveTestHelper“ darf deinen Standort verwenden?</b>
+    <p>Damit zeigen wir dir die Fahrschulen in deiner Nähe. Dein genauer Standort wird nicht gespeichert.</p>
+    <svg viewBox="0 0 200 80" class="map" style="border:0;border-radius:8px" aria-hidden="true"><rect class="m-land" width="200" height="80"/><path class="m-road" d="M0 30H200M0 62H200M50 0V80M130 0V80" stroke-width="6"/><path class="m-water" d="M165 0C180 30 172 55 186 80H200V0Z"/><circle cx="92" cy="46" r="16" fill="var(--blue)" opacity=".18"/><circle cx="92" cy="46" r="6" fill="var(--blue)" stroke="#fff" stroke-width="2"/></svg></div>
+    <button data-a="locallow">Beim Verwenden der App erlauben</button>
+    <button data-a="locallow">Einmal erlauben</button>
+    <button data-a="locdeny">Nicht erlauben</button></div>`;
+  renderNotes();
+}
+
+/* purchase sheet */
+function openSheet(){
+  const sh=$("#sheet");sh.hidden=false;sh.classList.remove("center");S.sheet="buy";
+  sh.innerHTML=`<div class="sheet" role="dialog" aria-label="Kauf bestätigen"><span class="grab"></span>
+  <div class="row" style="gap:12px">${LOGO.replace('width="40" height="40"','width="48" height="48"')}<div><b style="font-family:var(--display);font-size:19px">Videopaket ${esc(S.school)}</b><p class="sub">DriveTestHelper · In-App-Kauf · einmalig</p></div></div>
+  <dl class="kv"><dt>Preis</dt><dd class="num"><b>${schoolBy(S.school).price}</b> inkl. MwSt.</dd><dt>Inhalt</dt><dd>${vidsOf(S.school).length} Videos, künftige inklusive</dd><dt>Konto</dt><dd>${S.user?esc(S.user.name)+" ("+(S.user.via==="apple"?"Apple":"Google")+")":""}</dd></dl>
+  <p class="hint">Simulation: Hier öffnet sich in der echten App der Kaufdialog von App Store bzw. Google Play. Es wird nichts berechnet.</p>
+  <button class="btn yellow" data-a="confirmbuy">Kauf bestätigen</button><button class="btn ghost" data-a="closesheet">Abbrechen</button></div>`;
+  renderNotes();
+}
+function confirmBuy(b){
+  b.disabled=true;b.innerHTML='<span class="spin"></span> Wird bestätigt';
+  setTimeout(()=>{if(!owns(S.school))S.owned.push(S.school);addReceipt(S.school);save();
+    $("#sheet").innerHTML=`<div class="sheet" role="dialog" aria-label="Kauf abgeschlossen"><span class="grab"></span><div class="check">${I.bigtick}</div>
+    <h3 class="h" style="text-align:center">Paket freigeschaltet</h3><p class="sub" style="text-align:center">Alle ${vidsOf(S.school).length} Videos von ${esc(S.school)} sind jetzt in „Meine Videos“.</p>
+    <button class="btn" data-a="aftersale">Videos ansehen</button></div>`},900);
+}
+function closeSheet(){const sh=$("#sheet");sh.hidden=true;sh.innerHTML="";S.sheet=null;renderNotes()}
+
+$("#relaunch").addEventListener("click",()=>{stopPlayer();closeSheet();fresh();restore();if(S.user){S.screen="splash";render(true);setTimeout(()=>{if(S.screen==="splash"){S.screen="welcome";render(true)}},1200)}else render(true)});
+$("#reset").addEventListener("click",()=>{stopPlayer();stSet(null);kvSet(RCPT,null);kvSet(LANGK,null);VIDEOS.splice(0,VIDEOS.length-BASE_COUNT);closeSheet();fresh();render(true)});
+$("#logo").innerHTML=LOGO;
+render(true);
+})();
+</script>
+
+</body>
+</html>
