@@ -698,6 +698,13 @@ function nextChapter(){const a=acct();const last=a&&a.last&&chById(a.last);if(la
   const from=last?CHAPTERS.indexOf(last):0;return CHAPTERS.slice(from).find(c=>!chDone(c))||CHAPTERS.find(c=>!chDone(c))||null}
 let lastSaved=-9;
 function noteProg(v,t){if(Math.abs(t-lastSaved)<2&&t<v.dur)return;lastSaved=t;updAcct(a=>{a.prog[v.id]=Math.max(a.prog[v.id]||0,Math.round(t));a.last=v.id})}
+function consent(){const l=lic();return !!(l&&l.consent)}
+function setConsent(on){updAcct(a=>{a.license.consent=on;a.license.consentAt=on?Date.now():null;if(!on)a.ticks={}})}
+function consentCard(){const on=consent(),l=lic();
+  return `<div class="card"><span class="lbl">Datenschutz</span>
+    <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><span style="font-size:14px">${esc(MYSCHOOL.name)} darf meinen Lernstand, meine Prüfungssimulationen und meine Haken bei den Tipps sehen</span><b class="${on?"ok":"sub"}" style="flex:none">${on?"Ja":"Nein"}</b></div>
+    ${on?`<p class="hint">Erteilt am ${fmtDate(l.consentAt)}.</p><button class="btn ghost" data-a="consentoff">Freigabe widerrufen</button>`
+        :`<p class="hint">Deine Fahrschule sieht nur, dass dein Code eingelöst wurde. Haken bei den Tipps sind ohne Freigabe nicht möglich.</p><button class="btn ghost" data-a="consenton">Freigabe erteilen</button>`}</div>`}
 function tickDate(id){const a=acct();return a&&a.ticks[id]}
 function ticksDone(){return VIDEOS.filter(v=>tickDate(v.id)).length}
 function pbar(p,green){return `<div class="pbar${green?" g":""}" role="progressbar" aria-valuenow="${Math.round(p*100)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(0,Math.min(100,p*100)).toFixed(1)}%"></i></div>`}
@@ -766,6 +773,8 @@ K.code=()=>{
   <div class="card">
     <div class="field"><label for="code">Zugangscode</label><input class="inp codeinp" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DTH-XXXX-XXXX-X" maxlength="20"></div>
     <p class="err" id="codeerr" hidden></p>
+    <label class="check-row" style="align-items:flex-start"><input type="checkbox" id="consent" style="accent-color:var(--blue)"> <span>Die Fahrschule, von der mein Code stammt, darf meinen Namen, meinen Lernfortschritt, meine Ergebnisse in der Prüfungssimulation und meine Haken bei den Tipps sehen. Das hilft ihr, mich auf die Prüfung vorzubereiten.</span></label>
+    <p class="hint">Freiwillig. Du kannst die App auch ohne diese Freigabe nutzen und sie jederzeit unter Konto ändern. Ohne Freigabe erfährt deine Fahrschule nur, dass der Code eingelöst wurde.</p>
     <button class="btn" data-a="redeemgo">Freischalten</button>
     <p class="hint">Jeder Code funktioniert nur einmal. Er gilt 12 Monate ab dem Einlösen und gehört danach zu deinem Konto.</p></div>
   <p class="hint" style="text-align:center">Angemeldet als ${esc(S.user.name)} (${S.user.via==="apple"?"Apple":"Google"}) · <button class="linkbtn" data-a="logout" style="font-size:12.5px">Abmelden</button></p>
@@ -813,12 +822,13 @@ K.tips=()=>{
   if(S.filter!=="Alle")vids=vids.filter(v=>v.topic===S.filter);
   return bar("Tipps deiner Fahrschule",false)+`<div class="scr">
   <div class="row" style="gap:12px">${avatar(MYSCHOOL.name,44)}<div><b style="font-family:var(--display);font-size:18px">${esc(MYSCHOOL.name)}</b><p class="sub">Knifflige Stellen der Prüfungsstrecken</p></div></div>
-  <div class="card" style="gap:8px"><div class="row" style="justify-content:space-between"><b>Schon gefahren</b><span class="sub num">${td} von ${VIDEOS.length}</span></div>${pbar(td/VIDEOS.length,true)}<p class="hint">Hake eine Stelle ab, sobald du sie in der Fahrstunde gefahren bist. Deine Fahrschule sieht das als Nachweis.</p></div>
+  <div class="card" style="gap:8px"><div class="row" style="justify-content:space-between"><b>Schon gefahren</b><span class="sub num">${td} von ${VIDEOS.length}</span></div>${pbar(td/VIDEOS.length,true)}<p class="hint">${consent()?"Hake eine Stelle ab, sobald du sie in der Fahrstunde gefahren bist. Deine Fahrschule sieht das als Nachweis.":"Abhaken ist nur mit Freigabe für deine Fahrschule möglich (Konto → Datenschutz)."}</p></div>
   ${areaMap(VIDEOS,"Orte der Tipps von "+MYSCHOOL.name)}
   <div class="chips" role="group" aria-label="Nach Thema filtern">${topics.map(t=>`<button class="chip" data-a="filter" data-t="${t}" aria-pressed="${S.filter===t}">${t}</button>`).join("")}</div>
   <div class="list">${vids.map(tipRow).join("")||'<p class="sub">Keine Tipps zu diesem Thema.</p>'}</div></div>`+tabs("tips");
 };
 function tickCard(v){const d=tickDate(v.id);
+  if(!consent())return `<div class="card"><span class="lbl">Schon dort gefahren?</span><p style="margin:0;font-size:14px">Der Haken ist ein Nachweis für ${esc(MYSCHOOL.name)}. Dafür musst du erlauben, dass deine Fahrschule deinen Lernstand und deine Haken sieht.</p><button class="btn ghost" data-a="consenton">Freigabe erteilen</button></div>`;
   return d?`<div class="card" style="border-color:var(--green);background:var(--green-soft)"><div class="row" style="gap:8px">${I.tick}<b style="color:var(--green)">Hier bin ich gefahren</b></div><p style="margin:0;font-size:13.5px">Bestätigt am ${fmtDate(d)}. ${esc(MYSCHOOL.name)} sieht das als Nachweis. Der Haken bleibt dauerhaft.</p></div>`
    :`<div class="card"><span class="lbl">Schon dort gefahren?</span><p style="margin:0;font-size:14px">Hake die Stelle ab, sobald du sie in der Fahrstunde gefahren bist. ${esc(MYSCHOOL.name)} sieht das als Nachweis.</p><button class="btn" data-a="tickask">${I.tick.replace('var(--green)','currentColor')} Hier bin ich gefahren</button></div>`}
 K.tip=()=>{
@@ -840,6 +850,7 @@ K.account=()=>{
   ${l?`<div class="card"><span class="lbl">Dein Zugang</span>
     <dl class="kv"><dt>Fahrschule</dt><dd>${esc(l.school)}</dd><dt>Gültig bis</dt><dd class="num"><b>${fmtDate(l.until)}</b>${st==="expired"?' <span class="tag" style="background:var(--yellow-soft);color:var(--ink)">abgelaufen</span>':""}</dd><dt>Eingelöst</dt><dd class="num">${fmtDate(l.since)}</dd><dt>Code</dt><dd class="num">${maskCode(l.code)}</dd></dl>
     <p class="hint">Neues Handy? Melde dich dort mit demselben ${S.user.via==="apple"?"Apple":"Google"}-Konto an. Dein Zugang, dein Fortschritt und deine Haken sind sofort da.</p></div>`:""}
+  ${l?consentCard():""}
   ${langCard()}
   <div class="menu"><button data-a="logout">Abmelden</button><button data-a="delacc" class="red">Konto löschen</button></div>
   ${legal()}</div>`+(st==="ok"?tabs("acc"):"");
@@ -1023,7 +1034,8 @@ function redeemGo(){
   err.hidden=true;const b=document.querySelector('[data-a="redeemgo"]');b.disabled=true;b.innerHTML='<span class="spin"></span> Wird geprüft';
   setTimeout(()=>{
     const now=Date.now();
-    updAcct((a,dd)=>{dd.used.push(code);a.license={code,school:MYSCHOOL.name,since:now,until:addMonths(now,12)}});
+    const cons=!!($("#consent")&&$("#consent").checked);
+    updAcct((a,dd)=>{dd.used.push(code);a.license={code,school:MYSCHOOL.name,since:now,until:addMonths(now,12),consent:cons,consentAt:cons?now:null}});
     S.hist=[];S.screen="home";S.toast=`Freigeschaltet bis ${fmtDate(addMonths(now,12))}. Viel Erfolg!`;render(true);
   },900);
 }
@@ -1032,7 +1044,7 @@ function redeemGo(){
 const NOTES={
 welcome:["Start ohne Inhalte","Ohne Anmeldung und Code zeigt die App nur, was drin ist und wie man freischaltet. Es gibt keine Preise, keinen Kaufen-Knopf und keinen Link zu einer Kaufseite. Das ist die Bedingung von Apple-Regel 3.1.3(c): Die App wird nur an Organisationen (Fahrschulen) verkauft, die Schüler nutzen bereits bezahlten Zugang. Kein In-App-Kauf, keine Store-Gebühr."],
 login:["Anmeldung mit Apple oder Google","Supabase Auth. „Mit Apple anmelden“ funktioniert auch auf Android, damit ein Wechsel vom iPhone zu Android ohne neuen Code klappt."],
-code:["Zugangscode einlösen","Der Server prüft: Gibt es den Code, ist er noch frei? Dann wird er an dieses Konto gebunden und gilt 12 Monate ab heute. Jeder Code funktioniert nur einmal. Das letzte Zeichen ist ein Prüfzeichen: Tippfehler erkennt schon die App, ohne den Server zu fragen. Demo-Codes: <code>DTH-7K4P-92QX-W</code>, <code>DTH-M3RT-58LA-Q</code>, <code>DTH-Q9ZB-74HE-3</code>. Schon benutzt: <code>DTH-USED-2345-H</code>. Zum Testen ein Zeichen ändern oder zwei vertauschen. Für das App-Review bekommt Apple einen eigenen Demo-Code."],
+code:["Zugangscode einlösen","Der Server prüft: Gibt es den Code, ist er noch frei? Dann wird er an dieses Konto gebunden und gilt 12 Monate ab heute. Jeder Code funktioniert nur einmal. Die Einwilligung ist nicht vorausgewählt und keine Bedingung für den Zugang (Kopplungsverbot). Ohne sie wird für die Fahrschule nichts erfasst: kein Lernstand, keine Simulationen, keine Haken. Das letzte Zeichen ist ein Prüfzeichen: Tippfehler erkennt schon die App, ohne den Server zu fragen. Demo-Codes: <code>DTH-7K4P-92QX-W</code>, <code>DTH-M3RT-58LA-Q</code>, <code>DTH-Q9ZB-74HE-3</code>. Schon benutzt: <code>DTH-USED-2345-H</code>. Zum Testen ein Zeichen ändern oder zwei vertauschen. Für das App-Review bekommt Apple einen eigenen Demo-Code."],
 splash:["Automatisch angemeldet","Die App findet das gespeicherte Sitzungs-Token (Schlüsselbund bzw. Keystore), prüft beim Server, ob der Zugang noch gilt, und öffnet direkt die Startseite."],
 home:["Startseite","„Weiterschauen“ springt an die letzte Stelle. Der Fortschritt liegt auf dem Server, nicht auf dem Handy, deshalb ist er auf jedem Gerät gleich."],
 course:["Theoriekurs","20 Lektionen à 90 Minuten, jede in 5 Teile à 18 Minuten. Die Videos liegen bei einem Video-Host mit CDN (z. B. Bunny Stream) und laufen als HLS-Stream mit mehreren Qualitätsstufen. Nur angemeldete Schüler mit gültigem Zugang bekommen kurzlebige Video-Links. Titel und Texte sind hier Platzhalter."],
@@ -1045,6 +1057,7 @@ q:["Frage lernen","Wie in der Prüfung: Fehlerpunkte von 2 bis 5, eine oder mehr
 qdone:["Runde geschafft","Nach jeder Runde sieht der Schüler, wie viele Fragen schon sicher sitzen."],
 exam:["Prüfungssimulation","Ablauf wie in der echten Theorieprüfung Klasse B: 30 Fragen (20 Grundstoff, 10 Zusatzstoff), 45 Minuten, frei springen zwischen den Fragen, erst am Ende abgeben. In der Demo gibt es nur 25 Beispielfragen."],
 result:["Auswertung","Bestanden mit höchstens 10 Fehlerpunkten, aber nicht, wenn zwei 5-Punkte-Fragen falsch sind. Die Ergebnisse könnte die Fahrschule im Portal sehen, z. B. als Hinweis, wer prüfungsreif ist."],
+consent:["Freigabe widerrufen","Ein Widerruf muss so einfach sein wie die Einwilligung (Art. 7 Abs. 3 DSGVO). Danach sieht die Fahrschule nichts mehr, die Haken werden gelöscht. Der eigene Fortschritt des Schülers bleibt, weil er ihn zum Weiterschauen braucht."],
 tick:["Abhaken bestätigen","Die Rückfrage verhindert versehentliches Abhaken, denn der Haken bleibt dauerhaft."],
 account:["Konto","Zeigt den Zugang mit Ablaufdatum. Konto löschen ist Pflicht in beiden Stores. Google verlangt zusätzlich eine Webseite, auf der man die Löschung beantragen kann."],
 delete:["Konto löschen","Der Code ist danach verbraucht. Die Haken bleiben anonym bei der Fahrschule (Vorschlag, muss in die Datenschutzerklärung). Bei „Mit Apple anmelden“ widerruft die App außerdem den Apple-Zugang."]
@@ -1124,6 +1137,10 @@ document.addEventListener("click",e=>{
     case "tip":S.vidKind="tip";S.vid=b.dataset.id;go("tip");break;
     case "filter":S.filter=b.dataset.t;render();break;
     case "tickask":openTickAsk();break;
+    case "consenton":setConsent(true);S.toast="Freigabe erteilt. "+MYSCHOOL.name+" sieht ab jetzt deinen Lernstand.";render();break;
+    case "consentoff":{const sh=$("#sheet");sh.hidden=false;sh.classList.add("center");S.sheet="consent";
+      sh.innerHTML=`<div class="alert" role="alertdialog" aria-label="Freigabe widerrufen"><div class="alert-b"><b>Freigabe widerrufen?</b><p>${esc(MYSCHOOL.name)} sieht ab sofort deinen Lernstand, deine Prüfungssimulationen und deine Haken nicht mehr. Deine bisherigen Haken werden gelöscht. Dein eigener Lernfortschritt in der App bleibt.</p></div><button data-a="closesheet">Abbrechen</button><button data-a="consentoffgo" style="color:var(--red)">Widerrufen</button></div>`;renderNotes();break}
+    case "consentoffgo":closeSheet();setConsent(false);S.toast="Freigabe widerrufen.";render();break;
     case "tickok":{const id=S.vid;updAcct(ac=>{if(!ac.ticks[id])ac.ticks[id]=Date.now()});closeSheet();
       const c=document.querySelector(".scr .card .btn[data-a=tickask]");if(c){c.closest(".card").outerHTML=tickCard(curVid())}break}
     case "pp":setPlaying(!P.playing);break;
