@@ -773,9 +773,12 @@ K.code=()=>{
   <div class="card">
     <div class="field"><label for="code">Zugangscode</label><input class="inp codeinp" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DTH-XXXX-XXXX-X" maxlength="20"></div>
     <p class="err" id="codeerr" hidden></p>
-    <label class="check-row" style="align-items:flex-start"><input type="checkbox" id="consent" style="accent-color:var(--blue)"> <span>Die Fahrschule, von der mein Code stammt, darf meinen Namen, meinen Lernfortschritt, meine Ergebnisse in der Prüfungssimulation und meine Haken bei den Tipps sehen. Das hilft ihr, mich auf die Prüfung vorzubereiten.</span></label>
-    <p class="hint">Freiwillig. Du kannst die App auch ohne diese Freigabe nutzen und sie jederzeit unter Konto ändern. Ohne Freigabe erfährt deine Fahrschule nur, dass der Code eingelöst wurde.</p>
-    <button class="btn" data-a="redeemgo">Freischalten</button>
+    <div style="background:var(--blue-soft);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px">
+      <b style="font-size:14.5px">Mit deiner Fahrschule teilen?</b>
+      <span style="font-size:14px">Deine Fahrschule sieht dann deinen Namen, deinen Fortschritt im Kurs, deine Prüfungssimulationen und deine Haken bei den Tipps. So weiß sie, wann du prüfungsreif bist, und kann dir gezielt helfen.</span></div>
+    <button class="btn" data-a="redeemgo" data-c="1">Freischalten und mit Fahrschule teilen</button>
+    <button class="linkbtn" data-a="redeemgo" data-c="0" style="align-self:center;font-size:14px">Ohne Freigabe freischalten</button>
+    <p class="hint">Freiwillig und jederzeit unter Konto änderbar. Ohne Freigabe erfährt deine Fahrschule nur, dass der Code eingelöst wurde. Haken bei den Tipps gehen dann nicht.</p>
     <p class="hint">Jeder Code funktioniert nur einmal. Er gilt 12 Monate ab dem Einlösen und gehört danach zu deinem Konto.</p></div>
   <p class="hint" style="text-align:center">Angemeldet als ${esc(S.user.name)} (${S.user.via==="apple"?"Apple":"Google"}) · <button class="linkbtn" data-a="logout" style="font-size:12.5px">Abmelden</button></p>
   ${legal()}</div>`;
@@ -1023,18 +1026,21 @@ function openTickAsk(){
   renderNotes();
 }
 function closeSheet(){const sh=$("#sheet");sh.hidden=true;sh.innerHTML="";S.sheet=null;renderNotes()}
-function redeemGo(){
+/* consent: true/false je nach gewähltem Button; undefined (Enter-Taste) = nur prüfen, nie stillschweigend einwilligen */
+function redeemGo(consentChoice,btn){
   const i=$("#code"),err=$("#codeerr"),code=normCode(i.value);
-  const fail=m=>{err.hidden=false;err.textContent=m;i.focus()};
+  const fail=m=>{err.hidden=false;err.style.color="";err.textContent=m;i.focus()};
   if(!code)return fail("Bitte gib deinen Zugangscode ein.");
   const d=srv();
   if(d.used.includes(code))return fail("Dieser Code wurde bereits eingelöst. Jeder Code funktioniert nur einmal. Frag deine Fahrschule nach einem neuen.");
   if(!codeOk(code))return fail(/[01OI]/.test(code.slice(4))?"Codes enthalten nie 0, O, 1 oder I. Prüfe die Schreibweise.":"Da stimmt etwas nicht: Bitte prüfe die Schreibweise, z. B. vertauschte Zeichen.");
   if(!DEMO_CODES.includes(code))return fail("Diesen Code gibt es nicht. Frag bei deiner Fahrschule nach.");
-  err.hidden=true;const b=document.querySelector('[data-a="redeemgo"]');b.disabled=true;b.innerHTML='<span class="spin"></span> Wird geprüft';
+  err.hidden=true;
+  if(consentChoice===undefined){err.hidden=false;err.style.color="var(--green)";err.textContent="Code stimmt. Wähle unten, ob du ihn mit oder ohne Freigabe einlöst.";return}
+  document.querySelectorAll('[data-a="redeemgo"]').forEach(x=>x.disabled=true);const b=btn;b.innerHTML='<span class="spin"></span> Wird geprüft';
   setTimeout(()=>{
     const now=Date.now();
-    const cons=!!($("#consent")&&$("#consent").checked);
+    const cons=consentChoice===true;
     updAcct((a,dd)=>{dd.used.push(code);a.license={code,school:MYSCHOOL.name,since:now,until:addMonths(now,12),consent:cons,consentAt:cons?now:null}});
     S.hist=[];S.screen="home";S.toast=`Freigeschaltet bis ${fmtDate(addMonths(now,12))}. Viel Erfolg!`;render(true);
   },900);
@@ -1044,7 +1050,7 @@ function redeemGo(){
 const NOTES={
 welcome:["Start ohne Inhalte","Ohne Anmeldung und Code zeigt die App nur, was drin ist und wie man freischaltet. Es gibt keine Preise, keinen Kaufen-Knopf und keinen Link zu einer Kaufseite. Das ist die Bedingung von Apple-Regel 3.1.3(c): Die App wird nur an Organisationen (Fahrschulen) verkauft, die Schüler nutzen bereits bezahlten Zugang. Kein In-App-Kauf, keine Store-Gebühr."],
 login:["Anmeldung mit Apple oder Google","Supabase Auth. „Mit Apple anmelden“ funktioniert auch auf Android, damit ein Wechsel vom iPhone zu Android ohne neuen Code klappt."],
-code:["Zugangscode einlösen","Der Server prüft: Gibt es den Code, ist er noch frei? Dann wird er an dieses Konto gebunden und gilt 12 Monate ab heute. Jeder Code funktioniert nur einmal. Die Einwilligung ist nicht vorausgewählt und keine Bedingung für den Zugang (Kopplungsverbot). Ohne sie wird für die Fahrschule nichts erfasst: kein Lernstand, keine Simulationen, keine Haken. Das letzte Zeichen ist ein Prüfzeichen: Tippfehler erkennt schon die App, ohne den Server zu fragen. Demo-Codes: <code>DTH-7K4P-92QX-W</code>, <code>DTH-M3RT-58LA-Q</code>, <code>DTH-Q9ZB-74HE-3</code>. Schon benutzt: <code>DTH-USED-2345-H</code>. Zum Testen ein Zeichen ändern oder zwei vertauschen. Für das App-Review bekommt Apple einen eigenen Demo-Code."],
+code:["Zugangscode einlösen","Der Server prüft: Gibt es den Code, ist er noch frei? Dann wird er an dieses Konto gebunden und gilt 12 Monate ab heute. Jeder Code funktioniert nur einmal. Die Einwilligung erfolgt aktiv über den Hauptbutton; „Ohne Freigabe“ ist gleichwertig sichtbar und keine Bedingung für den Zugang (Kopplungsverbot). Ein vorausgewähltes Häkchen wäre unwirksam (EuGH, Planet49). Ohne sie wird für die Fahrschule nichts erfasst: kein Lernstand, keine Simulationen, keine Haken. Das letzte Zeichen ist ein Prüfzeichen: Tippfehler erkennt schon die App, ohne den Server zu fragen. Demo-Codes: <code>DTH-7K4P-92QX-W</code>, <code>DTH-M3RT-58LA-Q</code>, <code>DTH-Q9ZB-74HE-3</code>. Schon benutzt: <code>DTH-USED-2345-H</code>. Zum Testen ein Zeichen ändern oder zwei vertauschen. Für das App-Review bekommt Apple einen eigenen Demo-Code."],
 splash:["Automatisch angemeldet","Die App findet das gespeicherte Sitzungs-Token (Schlüsselbund bzw. Keystore), prüft beim Server, ob der Zugang noch gilt, und öffnet direkt die Startseite."],
 home:["Startseite","„Weiterschauen“ springt an die letzte Stelle. Der Fortschritt liegt auf dem Server, nicht auf dem Handy, deshalb ist er auf jedem Gerät gleich."],
 course:["Theoriekurs","20 Lektionen à 90 Minuten, jede in 5 Teile à 18 Minuten. Die Videos liegen bei einem Video-Host mit CDN (z. B. Bunny Stream) und laufen als HLS-Stream mit mehreren Qualitätsstufen. Nur angemeldete Schüler mit gültigem Zugang bekommen kurzlebige Video-Links. Titel und Texte sind hier Platzhalter."],
@@ -1124,7 +1130,7 @@ document.addEventListener("click",e=>{
       if(!known){d.accounts[via]={name:"Lea Schmidt",license:null,prog:{},last:null,ticks:{}};srvSave(d)}
       kvSet(SESS,JSON.stringify({via}));S.user={via,name:"Lea"};S.hist=[];S.screen=homeScreen();
       S.toast=known&&S.screen==="home"?"Willkommen zurück. Dein Zugang und dein Fortschritt sind da.":null;render(true);break}
-    case "redeemgo":redeemGo();break;
+    case "redeemgo":redeemGo(b.dataset.c==="1",b);break;
     case "logout":stopPlayer();kvSet(SESS,null);S.user=null;S.hist=[];S.screen="welcome";S.toast="Du bist abgemeldet.";render(true);break;
     case "delacc":go("delete");break;
     case "delconfirm":b.disabled=true;b.innerHTML='<span class="spin"></span> Konto wird gelöscht';
