@@ -1,4 +1,5 @@
 # DriveTestHelper – Demo
 
-Klickbarer Prototyp der DriveTestHelper-App mit erfundenen Beispieldaten (Fahrschulen in Trier).
-Kein echtes Produkt, keine echten Käufe.
+Klickbarer Prototyp der DriveTestHelper-Theorie-App mit erfundenen Beispieldaten:
+Zugangscode der Fahrschule, Theoriekurs, Fragentraining (eigene Beispielfragen, keine amtlichen Fragen) und Tipps der Fahrschule.
+Kein echtes Produkt.
