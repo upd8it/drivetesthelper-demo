@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>DriveTestHelper Codes-Rechner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#EEF1F2; --surface:#FFFFFF; --surface-2:#F5F7F8; --ink:#14181D; --muted:#5A6570; --line:#D6DCE0;
+  --blue:#0B5CAD; --blue-soft:#E1ECF7; --red:#C8102E; --green:#2E7D4F; --green-soft:#DDF0E4; --yellow-soft:#FFF3CC;
+  --c-var:#8A949C; --c-fix:#B9C1C7; --c-dev:#5F6B74; --c-res:#eda100; --c-you:#2a78d6;
+  --display:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif; --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;--paper:#0E1215;--surface:#171C21;--surface-2:#1D2329;--ink:#E7ECEF;--muted:#98A4AE;--line:#2A3239;--blue:#4A98E6;--blue-soft:#15293D;--red:#F0566B;--green:#5CC08A;--green-soft:#14301F;--yellow-soft:#3A2F0A;--c-var:#6E7880;--c-fix:#4A535B}}
+:root[data-theme="dark"]{color-scheme:dark;--paper:#0E1215;--surface:#171C21;--surface-2:#1D2329;--ink:#E7ECEF;--muted:#98A4AE;--line:#2A3239;--blue:#4A98E6;--blue-soft:#15293D;--red:#F0566B;--green:#5CC08A;--green-soft:#14301F;--yellow-soft:#3A2F0A;--c-var:#6E7880;--c-fix:#4A535B}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #F5B800;outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 24px 60px;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-weight:700;font-size:36px;line-height:1.05;margin:0}
+.lead{margin:6px 0 0;color:var(--muted);max-width:70ch}
+.lbl{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h2{margin:0;font-family:var(--display);font-weight:600;font-size:20px}
+.inputs{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
+.f{display:grid;grid-template-columns:1fr 110px;gap:4px 10px;align-items:center}
+.f label{font-size:13.5px}
+.f small{grid-column:1/-1;font-size:12px;color:var(--muted);margin-top:-2px}
+.f input,.f select{width:100%;background:var(--surface);border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;text-align:right}
+.f select{text-align:left}
+.f.wide{grid-template-columns:1fr}
+.sec{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:10px}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
+.presets button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.tile span{font-size:13px;color:var(--muted)}
+.tile b{display:block;font-family:var(--display);font-weight:700;font-size:28px;line-height:1.1}
+.tile small{font-size:12.5px;color:var(--muted)}
+.tile.you{border-top:4px solid var(--c-you)}
+.neg{color:var(--red)!important}
+.stack{display:flex;height:34px;border-radius:8px;overflow:hidden;gap:2px;background:var(--surface-2)}
+.stack i{display:block;height:100%;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{text-align:left;font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line)}
+td.r,th.r{text-align:right}
+tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+tr.sub td{color:var(--muted)}
+.tblw{overflow-x:auto}
+.note{background:var(--yellow-soft);border-radius:10px;padding:10px 12px;font-size:13px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+svg text{font-family:var(--body);fill:var(--muted);font-size:11px}
+.tip{font-size:13px;color:var(--muted);margin:0}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}.inputs{position:static;max-height:none}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.wrap{padding:20px 16px 48px}h1{font-size:28px}.tile b{font-size:22px}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="lbl">Vertraulich</div>
+    <h1>DriveTestHelper: Erlösrechner Codepakete</h1>
+    <p class="lead">Fahrschulen kaufen Zugangscodes (79 € netto, ab 500 Stück −3 %, ab 1.000 −4 %). Keine Store-Gebühr, weil außerhalb der App abgerechnet wird. Der gesamte Gewinn gehört dem Besitzer der App, es gibt keine Aufteilung. Alle Kosten sind Annahmen zum Durchspielen.</p>
+  </header>
+  <div class="layout">
+    <aside class="card inputs" aria-label="Annahmen">
+      <div><span class="lbl">Szenario</span><div class="presets" id="presets" style="margin-top:6px"></div></div>
+      <div class="sec"><span class="lbl">Markt</span>
+        <div class="f"><label for="schools">Fahrschulen im Gebiet</label><input id="schools" type="number" min="0" step="1"></div>
+        <div class="f"><label for="share">Davon Kunden (%)</label><input id="share" type="number" min="0" max="100" step="1"></div>
+        <div class="f"><label for="students">Fahrschüler pro Fahrschule und Jahr</label><input id="students" type="number" min="0" step="5"></div>
+        <div class="f"><label for="uptake">Anteil Schüler mit Code (%)</label><input id="uptake" type="number" min="0" max="100" step="5"><small>Gibt die Fahrschule jedem Schüler einen Code, oder nur einem Teil?</small></div>
+        <div class="f"><label for="mode">Bestellweise</label><select id="mode"><option value="1">1× im Jahr</option><option value="2">2× im Jahr</option><option value="0">in 100er-Paketen</option></select><small>Bestimmt den Mengenrabatt. Bestellt wird in Hunderterschritten.</small></div>
+      </div>
+      <div class="sec"><span class="lbl">Preis</span>
+        <div class="f"><label for="price">Preis pro Code (€ netto)</label><input id="price" type="number" min="0" step="1"></div>
+        <div class="f"><label for="d500">Rabatt ab 500 (%)</label><input id="d500" type="number" min="0" step=".5"></div>
+        <div class="f"><label for="d1000">Rabatt ab 1.000 (%)</label><input id="d1000" type="number" min="0" step=".5"></div>
+      </div>
+      <div class="sec"><span class="lbl">Kosten pro Schüler</span>
+        <div class="f"><label for="lic">Lizenz Fragenkatalog (€)</label><input id="lic" type="number" min="0" step=".5"><small>Annahme. Echter Preis nur auf Anfrage bei der arge tp 21.</small></div>
+        <div class="f"><label for="gb">Video-Datenvolumen (GB)</label><input id="gb" type="number" min="0" step="1"><small>30 h Kurs, davon ca. 60 % geschaut, 720p.</small></div>
+        <div class="f"><label for="cgb">Kosten CDN (€ pro GB)</label><input id="cgb" type="number" min="0" step=".001"></div>
+        <div class="f"><label for="other">Sonstiges (€)</label><input id="other" type="number" min="0" step=".1"><small>Untertitel/Tonspur pro Nutzung, Support, Mails.</small></div>
+      </div>
+      <div class="sec"><span class="lbl">Fixkosten</span>
+        <div class="f"><label for="fix">Laufend pro Monat (€)</label><input id="fix" type="number" min="0" step="10"><small>Server, Datenbank, Speicher, Buchhaltung, Developer-Konten, Versicherung, Steuerberatung.</small></div>
+        <div class="f"><label for="prod">Einmalig: Produktion Kurs (€)</label><input id="prod" type="number" min="0" step="1000"></div>
+        <div class="f"><label for="dev">Einmalig: Entwicklung App und Portal (€)</label><input id="dev" type="number" min="0" step="1000"><small>Einmalige Vergütung für die Entwicklung, kein Anteil am Gewinn.</small></div>
+        <div class="f"><label for="years">Einmalkosten verteilt auf Jahre</label><input id="years" type="number" min="1" step="1"></div>
+        <div class="f"><label for="res">Rücklage Plattform (% vom Netto)</label><input id="res" type="number" min="0" max="100" step="1"><small>Für Weiterentwicklung, Updates des Fragenkatalogs, neue Videos.</small></div>
+      </div>
+    </aside>
+
+    <main style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <div class="tiles" id="tiles"></div>
+      <section class="card"><h2>Wohin der Netto-Umsatz geht</h2><div class="stack" id="stack" role="img"></div><div class="legend" id="legend"></div><p class="tip" id="stacknote"></p></section>
+      <div class="g2">
+        <section class="card"><h2>Rechnung pro Jahr</h2><div class="tblw"><table id="pl"></table></div></section>
+        <section class="card"><h2>Pro Fahrschule</h2><div class="tblw"><table id="per"></table></div><p class="tip" id="pernote"></p></section>
+      </div>
+      <section class="card"><h2>Gewinn nach Anzahl Kunden</h2><p class="tip">Gewinn vor Steuern pro Jahr, je nachdem wie viele Fahrschulen Kunde sind. Alle anderen Annahmen bleiben gleich.</p><div id="chart"></div></section>
+      <section class="card"><h2>Rabattstaffel</h2><div class="tblw"><table id="tiers"></table></div></section>
+      <p class="note">Alle Werte vor Einkommen-, Gewerbe- bzw. Körperschaftsteuer. Die Umsatzsteuer (19 %) zahlen die Fahrschulen zusätzlich, du führst sie ans Finanzamt ab; sie ist kein Erlös. Kosten sind grobe Annahmen und vor dem Start mit echten Angeboten zu prüfen.</p>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const eur=(n,d)=>(n<0?"− ":"")+Math.abs(n).toLocaleString("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:d==null?0:d,minimumFractionDigits:d==null?0:d});
+const int=n=>Math.round(n).toLocaleString("de-DE");
+const IDS=["schools","share","students","uptake","mode","price","d500","d1000","lic","gb","cgb","other","fix","prod","dev","years","res"];
+const BASE={price:79,d500:3,d1000:4,lic:5,gb:10,cgb:.01,other:.5,fix:300,prod:30000,dev:0,years:3,res:5,uptake:100,mode:"1",students:100};
+const PRESETS={
+  "Trier und Umgebung":{schools:25,share:40},
+  "Rheinland-Pfalz":{schools:450,share:10},
+  "Bundesweit":{schools:10000,share:3}
+};
+let cur="Trier und Umgebung";
+function set(v){IDS.forEach(k=>{if(v[k]!=null)$("#"+k).value=v[k]})}
+function get(){const o={};IDS.forEach(k=>o[k]=k==="mode"?$("#"+k).value:Math.max(0,+$("#"+k).value||0));return o}
+
+function orderNet(q,v){const pct=q>=1000?v.d1000:q>=500?v.d500:0;return {net:q*v.price*(1-pct/100),pct}}
+function perSchool(v){
+  const need=v.students*v.uptake/100;
+  const codes=Math.ceil(need/100)*100;
+  let net=0,pct=0;
+  if(v.mode==="0"){net=codes*v.price}
+  else{const n=Math.max(1,Math.min(+v.mode,codes/100)),each=Math.ceil(need/n/100)*100;const o=orderNet(each,v);net=o.net*n;pct=o.pct;return {codes:each*n,net,pct,orders:n,each}}
+  return {codes,net,pct,orders:codes/100,each:100};
+}
+function calc(v,customers){
+  const ps=perSchool(v),cust=customers!=null?customers:Math.round(v.schools*v.share/100);
+  const codes=ps.codes*cust,net=ps.net*cust,vat=net*.19;
+  const used=Math.min(codes,v.students*v.uptake/100*cust);
+  const varc=used*(v.lic+v.gb*v.cgb+v.other);
+  const fix=v.fix*12,prod=v.prod/(v.years||1),dev=v.dev/(v.years||1);
+  const res=net*v.res/100;
+  const profit=net-varc-fix-prod-dev-res;
+  return {ps,cust,codes,used,net,vat,gross:net+vat,varc,fix,prod,dev,res,profit};
+}
+function breakEven(v){const ps=perSchool(v);const used=v.students*v.uptake/100;const margin=ps.net*(1-v.res/100)-used*(v.lic+v.gb*v.cgb+v.other);if(margin<=0)return Infinity;return Math.ceil((v.fix*12+(v.prod+v.dev)/(v.years||1))/margin)}
+
+function render(){
+  const v=get(),r=calc(v),be=breakEven(v);
+  $("#presets").innerHTML=Object.keys(PRESETS).map(k=>`<button data-p="${k}" aria-pressed="${cur===k}">${k}</button>`).join("");
+  const tile=(cls,l,val,s,neg)=>`<div class="tile ${cls}"><span>${l}</span><b class="num ${neg?"neg":""}">${val}</b><small>${s}</small></div>`;
+  $("#tiles").innerHTML=
+    tile("","Umsatz netto / Jahr",eur(r.net),`${int(r.cust)} Fahrschulen · ${int(r.codes)} Codes`)+
+    tile("","Gewinn vor Steuern",eur(r.profit),`${r.net?Math.round(r.profit/r.net*100):0} % vom Netto`,r.profit<0)+
+    tile("","Gewinnschwelle",be===Infinity?"nie":int(be)+" Kunden",be===Infinity?"Kosten pro Kunde zu hoch":"ab hier sind alle Kosten gedeckt",be===Infinity)+
+    tile("you","Gewinn pro Code",r.codes?eur(r.profit/r.codes,2):"–","nach allen Kosten und Rücklage",r.profit<0);
+  // Stapel
+  const parts=[["Variable Kosten",r.varc,"var(--c-var)"],["Laufende Fixkosten",r.fix,"var(--c-fix)"],["Produktion und Entwicklung",r.prod+r.dev,"var(--c-dev)"],["Rücklage Plattform",r.res,"var(--c-res)"],["Gewinn Besitzer",Math.max(0,r.profit),"var(--c-you)"]];
+  const tot=Math.max(r.net,parts.reduce((a,p)=>a+p[1],0))||1;
+  $("#stack").innerHTML=parts.map(p=>p[1]>0?`<i style="width:${(p[1]/tot*100).toFixed(2)}%;background:${p[2]}" title="${p[0]}: ${eur(p[1])}"></i>`:"").join("");
+  $("#stack").setAttribute("aria-label",parts.map(p=>p[0]+" "+eur(p[1])).join(", "));
+  $("#legend").innerHTML=parts.map(p=>`<span><i style="background:${p[2]}"></i>${p[0]} <b class="num">${eur(p[1])}</b></span>`).join("");
+  $("#stacknote").textContent=r.profit<0?`Die Kosten übersteigen den Umsatz um ${eur(-r.profit)}. Der Balken zeigt die Kosten im Verhältnis.`:"";
+  // GuV
+  const row=(l,val,cls)=>`<tr class="${cls||""}"><td>${l}</td><td class="r num">${eur(val)}</td></tr>`;
+  $("#pl").innerHTML=`<tr><th>Posten</th><th class="r">€ / Jahr</th></tr>`+
+    row(`Umsatz netto (${int(r.codes)} Codes)`,r.net)+
+    row("Umsatzsteuer 19 % (wird abgeführt)",r.vat,"sub")+
+    row(`Lizenz Fragen (${int(r.used)} Schüler × ${eur(v.lic,2)})`,-r.used*v.lic)+
+    row(`Video-CDN (${int(r.used*v.gb)} GB)`,-r.used*v.gb*v.cgb)+
+    row("Sonstiges pro Schüler",-r.used*v.other)+
+    row("Laufende Fixkosten",-r.fix)+
+    row(`Produktion Kurs (${eur(v.prod)} ÷ ${v.years} Jahre)`,-r.prod)+
+    (v.dev?row(`Entwicklung App und Portal (${eur(v.dev)} ÷ ${v.years} Jahre)`,-r.dev):"")+
+    row(`Rücklage Plattform ${v.res} %`,-r.res)+
+    row("Gewinn vor Steuern",r.profit,"tot");
+  // pro Fahrschule
+  const ps=r.ps,usedS=v.students*v.uptake/100;
+  $("#per").innerHTML=`<tr><th>Posten</th><th class="r">Wert</th></tr>
+    <tr><td>Codes pro Jahr</td><td class="r num">${int(ps.codes)}</td></tr>
+    <tr><td>Bestellungen</td><td class="r num">${v.mode==="0"?int(ps.orders)+" × 100":ps.orders+" × "+int(ps.each)}</td></tr>
+    <tr><td>Rabatt</td><td class="r num">${ps.pct?ps.pct+" %":"keiner"}</td></tr>
+    <tr><td>Zahlt netto / Jahr</td><td class="r num">${eur(ps.net)}</td></tr>
+    <tr><td>Zahlt brutto / Jahr</td><td class="r num">${eur(ps.net*1.19)}</td></tr>
+    <tr><td>Pro genutztem Code netto</td><td class="r num">${usedS?eur(ps.net/usedS,2):"–"}</td></tr>
+    <tr><td>Kosten für dich pro Schüler</td><td class="r num">${eur(v.lic+v.gb*v.cgb+v.other,2)}</td></tr>`;
+  $("#pernote").textContent=be===Infinity?"Mit diesen Annahmen deckt eine Fahrschule nicht einmal ihre eigenen Kosten.":`Gewinnschwelle: ab ${int(be)} Fahrschulen als Kunden sind alle Kosten gedeckt.${ps.codes>usedS?` Durch das Aufrunden auf Hunderter kauft jede Fahrschule ${int(ps.codes-usedS)} Codes auf Vorrat.`:""}`;
+  // Chart
+  chart(v,r.cust,be);
+  // Staffel
+  $("#tiers").innerHTML=`<tr><th>Paket</th><th class="r">Liste</th><th class="r">Rabatt</th><th class="r">Netto</th><th class="r">Brutto</th><th class="r">pro Code netto</th></tr>`+
+    [100,200,300,500,1000].map(q=>{const o=orderNet(q,v);return `<tr><td class="num">${int(q)} Codes</td><td class="r num">${eur(q*v.price)}</td><td class="r num">${o.pct?o.pct+" %":"–"}</td><td class="r num">${eur(o.net,2)}</td><td class="r num">${eur(o.net*1.19,2)}</td><td class="r num">${eur(o.net/q,2)}</td></tr>`}).join("");
+}
+function chart(v,cust,be){
+  const max=Math.max(10,Math.ceil(Math.max(v.schools*Math.min(1,v.share/100*2.5),cust*1.6,be===Infinity?0:be*1.6)/10)*10);
+  const N=60,pts=[];for(let i=0;i<=N;i++){const c=Math.round(max*i/N);pts.push([c,calc(v,c).profit])}
+  const ys=pts.map(p=>p[1]),ymin=Math.min(0,...ys),ymax=Math.max(0,...ys)||1;
+  const W=760,H=260,L=72,R=16,T=14,B=34,x=c=>L+(c/max)*(W-L-R),y=p=>T+(ymax-p)/(ymax-ymin||1)*(H-T-B);
+  const ticks=5,yt=[];for(let i=0;i<=ticks;i++)yt.push(ymin+(ymax-ymin)*i/ticks);
+  const fmtK=n=>Math.abs(n)>=1e6?(n/1e6).toLocaleString("de-DE",{maximumFractionDigits:1})+" Mio. €":Math.abs(n)>=1000?Math.round(n/1000).toLocaleString("de-DE")+" Tsd. €":Math.round(n)+" €";
+  const path=pts.map((p,i)=>(i?"L":"M")+x(p[0]).toFixed(1)+" "+y(p[1]).toFixed(1)).join(" ");
+  const cur=calc(v,cust).profit;
+  $("#chart").innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Gewinn pro Jahr bei 0 bis ${max} Fahrschulen">
+   ${yt.map(t=>`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${L-8}" y="${y(t)+4}" text-anchor="end">${fmtK(t)}</text>`).join("")}
+   <line x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1.2"/>
+   ${[0,.25,.5,.75,1].map(f=>`<text x="${x(max*f)}" y="${H-12}" text-anchor="middle">${int(max*f)}</text>`).join("")}
+   <text x="${W-R}" y="${H-1}" text-anchor="end">Fahrschulen als Kunden</text>
+   ${be!==Infinity&&be<=max?`<line x1="${x(be)}" x2="${x(be)}" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="4 4"/><text x="${x(be)+6}" y="${T+12}">Gewinnschwelle ${int(be)}</text>`:""}
+   <path d="${path}" fill="none" stroke="var(--c-you)" stroke-width="2.5" stroke-linejoin="round"/>
+   <circle cx="${x(cust)}" cy="${y(cur)}" r="5.5" fill="var(--c-you)" stroke="var(--surface)" stroke-width="2"/>
+   <text x="${Math.min(x(cust)+9,W-R-150)}" y="${y(cur)-10}" style="fill:var(--ink);font-weight:600">${int(cust)} Kunden: ${fmtK(cur)}</text></svg>`;
+}
+document.addEventListener("input",e=>{if(IDS.includes(e.target.id)){cur=null;render()}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(!b)return;cur=b.dataset.p;set(Object.assign({},BASE,PRESETS[cur]));render()});
+set(Object.assign({},BASE,PRESETS[cur]));render();
+})();
+</script>
+</body>
+</html>
