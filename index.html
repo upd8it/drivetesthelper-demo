@@ -270,7 +270,7 @@ textarea{min-height:110px;resize:vertical;line-height:1.45}
     <div class="eyebrow">Klickbarer Prototyp · Beispieldaten</div>
     <h1><span id="logo"></span>DriveTestHelper</h1>
     <p>Der komplette Theorieunterricht als Video plus die Tipps der eigenen Fahrschule. Fahrschulen kaufen Codepakete, jeder Schüler schaltet die App mit seinem eigenen Code frei.</p>
-    <p class="hint-side">Demo-Codes: <b>DTH-7K4P-92QX</b>, <b>DTH-M3RT-58LA</b>, <b>DTH-Q9ZB-14HE</b>. Bereits benutzt: DTH-USED-0001. Theorie-Inhalte sind Platzhalter.</p>
+    <p class="hint-side">Demo-Codes: <b>DTH-7K4P-92QX-W</b>, <b>DTH-M3RT-58LA-Q</b>, <b>DTH-Q9ZB-74HE-3</b>. Bereits benutzt: DTH-USED-2345-H. Theorie-Inhalte sind Platzhalter.</p>
     <div class="demo"><span class="lbl">Ausprobieren</span>
       <button class="linkbtn" id="relaunch">App schließen und neu öffnen</button>
       <button class="linkbtn" id="newphone">Neues Handy: App frisch installieren</button>
@@ -662,7 +662,7 @@ function fresh(){S={screen:"welcome",hist:[],user:null,lang:"de",sound:true,vid:
 const SRV="dth2-server", SESS="dth2-session", LANGK="dth2-lang", MEMS={};
 function kvGet(k){try{const v=localStorage.getItem(k);if(v!=null)return v}catch(e){}return k in MEMS?MEMS[k]:null}
 function kvSet(k,v){if(v==null)delete MEMS[k];else MEMS[k]=v;try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
-function emptySrv(){return {accounts:{},used:["DTH-USED-0001"],log:[]}}
+function emptySrv(){return {accounts:{},used:["DTH-USED-2345-H"],log:[]}}
 function srv(){try{return JSON.parse(kvGet(SRV)||"null")||emptySrv()}catch(e){return emptySrv()}}
 function srvSave(d){kvSet(SRV,JSON.stringify(d))}
 function acct(){if(!S.user)return null;return srv().accounts[S.user.via]||null}
@@ -674,13 +674,17 @@ function restore(){
 fresh();restore();
 
 /* ---------- Zugang (Lizenz) ---------- */
-const DEMO_CODES=["DTH-7K4P-92QX","DTH-M3RT-58LA","DTH-Q9ZB-14HE"];
+const DEMO_CODES=["DTH-7K4P-92QX-W","DTH-M3RT-58LA-Q","DTH-Q9ZB-74HE-3"];
+/* Codes: 8 Zufallszeichen + 1 Prüfzeichen (Luhn mod 32). Erkennt jeden einzelnen Tippfehler und vertauschte Nachbarzeichen schon in der App. */
+const CODE_CH="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function checkChar(b){const N=32;let f=2,s=0;for(let i=b.length-1;i>=0;i--){let a=f*CODE_CH.indexOf(b[i]);f=f===2?1:2;s+=Math.floor(a/N)+a%N}return CODE_CH[(N-s%N)%N]}
+function codeOk(c){const m=/^DTH-([A-Z2-9]{4})-([A-Z2-9]{4})-([A-Z2-9])$/.exec(c);if(!m)return false;const b=m[1]+m[2];return [...b+m[3]].every(x=>CODE_CH.includes(x))&&checkChar(b)===m[3]}
 function lic(){const a=acct();return a&&a.license}
 function licState(){const l=lic();if(!l)return "none";return Date.now()>l.until?"expired":"ok"}
 function addMonths(ms,m){const d=new Date(ms);d.setMonth(d.getMonth()+m);return d.getTime()}
 function fmtDate(ms){return new Date(ms).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"})}
-function normCode(s){const r=String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");return r.length===11?r.slice(0,3)+"-"+r.slice(3,7)+"-"+r.slice(7):String(s||"").trim().toUpperCase()}
-function maskCode(c){return c.slice(0,9)+"••••"}
+function normCode(s){let r=String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(r.length===9)r="DTH"+r;return r.length===12?r.slice(0,3)+"-"+r.slice(3,7)+"-"+r.slice(7,11)+"-"+r.slice(11):String(s||"").trim().toUpperCase()}
+function maskCode(c){return c.slice(0,9)+"••••-•"}
 function homeScreen(){if(!S.user)return "welcome";return licState()==="ok"?"home":"code"}
 const PROTECTED=new Set(["home","course","lesson","chapter","tips","tip","quiz","q","qdone","exam","result"]);
 
@@ -760,7 +764,7 @@ K.code=()=>{
   ${st==="expired"?`<div class="card" style="background:var(--yellow-soft);border-color:transparent"><b>Dein Zugang ist am ${fmtDate(l.until)} abgelaufen.</b><p style="margin:0;font-size:14px">Dein Fortschritt bleibt gespeichert. Mit einem neuen Code deiner Fahrschule geht es genau dort weiter.</p></div>`
    :`<div><span class="lbl">Hallo ${esc(S.user.name)}</span><h3 class="h" style="margin-top:4px">Gib deinen Zugangscode ein</h3><p class="sub" style="margin-top:6px">Den Code hast du von deiner Fahrschule bekommen, z. B. auf einem Zettel oder per Nachricht.</p></div>`}
   <div class="card">
-    <div class="field"><label for="code">Zugangscode</label><input class="inp codeinp" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DTH-XXXX-XXXX" maxlength="16"></div>
+    <div class="field"><label for="code">Zugangscode</label><input class="inp codeinp" id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DTH-XXXX-XXXX-X" maxlength="20"></div>
     <p class="err" id="codeerr" hidden></p>
     <button class="btn" data-a="redeemgo">Freischalten</button>
     <p class="hint">Jeder Code funktioniert nur einmal. Er gilt 12 Monate ab dem Einlösen und gehört danach zu deinem Konto.</p></div>
@@ -1014,8 +1018,9 @@ function redeemGo(){
   if(!code)return fail("Bitte gib deinen Zugangscode ein.");
   const d=srv();
   if(d.used.includes(code))return fail("Dieser Code wurde bereits eingelöst. Jeder Code funktioniert nur einmal. Frag deine Fahrschule nach einem neuen.");
-  if(!DEMO_CODES.includes(code))return fail("Diesen Code gibt es nicht. Prüfe die Schreibweise, z. B. 0 (Null) und O.");
-  const b=document.querySelector('[data-a="redeemgo"]');b.disabled=true;b.innerHTML='<span class="spin"></span> Wird geprüft';
+  if(!codeOk(code))return fail(/[01OI]/.test(code.slice(4))?"Codes enthalten nie 0, O, 1 oder I. Prüfe die Schreibweise.":"Da stimmt etwas nicht: Bitte prüfe die Schreibweise, z. B. vertauschte Zeichen.");
+  if(!DEMO_CODES.includes(code))return fail("Diesen Code gibt es nicht. Frag bei deiner Fahrschule nach.");
+  err.hidden=true;const b=document.querySelector('[data-a="redeemgo"]');b.disabled=true;b.innerHTML='<span class="spin"></span> Wird geprüft';
   setTimeout(()=>{
     const now=Date.now();
     updAcct((a,dd)=>{dd.used.push(code);a.license={code,school:MYSCHOOL.name,since:now,until:addMonths(now,12)}});
@@ -1027,7 +1032,7 @@ function redeemGo(){
 const NOTES={
 welcome:["Start ohne Inhalte","Ohne Anmeldung und Code zeigt die App nur, was drin ist und wie man freischaltet. Es gibt keine Preise, keinen Kaufen-Knopf und keinen Link zu einer Kaufseite. Das ist die Bedingung von Apple-Regel 3.1.3(c): Die App wird nur an Organisationen (Fahrschulen) verkauft, die Schüler nutzen bereits bezahlten Zugang. Kein In-App-Kauf, keine Store-Gebühr."],
 login:["Anmeldung mit Apple oder Google","Supabase Auth. „Mit Apple anmelden“ funktioniert auch auf Android, damit ein Wechsel vom iPhone zu Android ohne neuen Code klappt."],
-code:["Zugangscode einlösen","Der Server prüft: Gibt es den Code, ist er noch frei? Dann wird er an dieses Konto gebunden und gilt 12 Monate ab heute. Jeder Code funktioniert nur einmal. Demo-Codes: <code>DTH-7K4P-92QX</code>, <code>DTH-M3RT-58LA</code>, <code>DTH-Q9ZB-14HE</code>. Schon benutzt: <code>DTH-USED-0001</code>. Für das App-Review bekommt Apple einen eigenen Demo-Code."],
+code:["Zugangscode einlösen","Der Server prüft: Gibt es den Code, ist er noch frei? Dann wird er an dieses Konto gebunden und gilt 12 Monate ab heute. Jeder Code funktioniert nur einmal. Das letzte Zeichen ist ein Prüfzeichen: Tippfehler erkennt schon die App, ohne den Server zu fragen. Demo-Codes: <code>DTH-7K4P-92QX-W</code>, <code>DTH-M3RT-58LA-Q</code>, <code>DTH-Q9ZB-74HE-3</code>. Schon benutzt: <code>DTH-USED-2345-H</code>. Zum Testen ein Zeichen ändern oder zwei vertauschen. Für das App-Review bekommt Apple einen eigenen Demo-Code."],
 splash:["Automatisch angemeldet","Die App findet das gespeicherte Sitzungs-Token (Schlüsselbund bzw. Keystore), prüft beim Server, ob der Zugang noch gilt, und öffnet direkt die Startseite."],
 home:["Startseite","„Weiterschauen“ springt an die letzte Stelle. Der Fortschritt liegt auf dem Server, nicht auf dem Handy, deshalb ist er auf jedem Gerät gleich."],
 course:["Theoriekurs","20 Lektionen à 90 Minuten, jede in 5 Teile à 18 Minuten. Die Videos liegen bei einem Video-Host mit CDN (z. B. Bunny Stream) und laufen als HLS-Stream mit mehreren Qualitätsstufen. Nur angemeldete Schüler mit gültigem Zugang bekommen kurzlebige Video-Links. Titel und Texte sind hier Platzhalter."],
